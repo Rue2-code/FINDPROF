@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prof Consult | Student Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="student-dashboard.css">
+</head>
+<body>
+
+  <!-- =========================================================
+       TOP NAVIGATION BAR
+       Dark red -> orange gradient, same style as the Landing Page
+  ========================================================= -->
+  <header class="dashboard-navbar">
+    <div class="navbar-left">
+      <!-- Hamburger menu -- clickable, functionality not implemented yet -->
+      <button type="button" class="nav-icon-button hamburger-button" id="hamburgerButton" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <img src="images/whitepf.png" alt="Prof Consult Logo" class="navbar-logo">
+    </div>
+
+    <div class="navbar-right">
+      <!-- Quick Action trigger -->
+      <button type="button" class="nav-icon-button notification-button" id="quickActionButton" aria-haspopup="true" aria-expanded="false" aria-label="Quick actions">
+        <img src="images/actionbutton.png" alt="">
+      </button>
+
+      <!-- Quick Action popup -->
+      <div class="quick-action-panel" id="quickActionPanel" hidden>
+        <div class="quick-action-header">
+          <img src="images/actionbutton.png" alt="" class="quick-action-icon">
+          <div>
+            <p class="format-text quick-action-title">Quick Action</p>
+            <p class="quick-action-subtitle">What would you like to do?</p>
+          </div>
+        </div>
+
+        <div class="quick-action-item">
+          <div class="quick-action-item-text-block">
+            <p class="quick-action-item-title">Find Faculty</p>
+            <p class="quick-action-item-text">Search and view real-time faculty availability.</p>
+          </div>
+          <a href="faculty-directory.html" class="quick-action-button" data-nav="find-faculty">View Directory</a>
+        </div>
+
+        <div class="quick-action-item">
+          <div class="quick-action-item-text-block">
+            <p class="quick-action-item-title">Request Consultation</p>
+            <p class="quick-action-item-text">Schedule a conversation with your professor.</p>
+          </div>
+          <a href="#" class="quick-action-button" id="requestConsultationButton">Send Request</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       BURGER SIDEBAR
+       Slides in from the left; overlay dims/blurs the dashboard
+  ========================================================= -->
+  <div class="sidebar-overlay" id="sidebarOverlay" hidden></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="images/whitepf.png" alt="Prof Consult Logo" class="sidebar-logo">
+      <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Close menu">&times;</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="student-dashboard.html" class="sidebar-link is-active">Dashboard</a>
+      <a href="faculty-directory.html" class="sidebar-link">Faculty</a>
+      <a href="my-requests.html" class="sidebar-link">My Requests</a>
+      <a href="notifications.html" class="sidebar-link">Notifications</a>
+      <a href="student-profile.html" class="sidebar-link">Profile</a>
+      <a href="settings.html" class="sidebar-link">Settings</a>
+      <a href="student-login.html" class="sidebar-link">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- =========================================================
+       BACKGROUND
+       Full-viewport, slightly blurred, light white overlay so
+       the dashboard content stays readable
+  ========================================================= -->
+  <div class="page-background" aria-hidden="true">
+    <img src="images/coea.jpg" alt="" class="page-background-image">
+    <div class="page-background-overlay"></div>
+  </div>
+
+  <!-- =========================================================
+       MAIN DASHBOARD CONTENT
+  ========================================================= -->
+  <main class="dashboard-content">
+
+    <!-- =========================================================
+         LEFT COLUMN: greeting, search, professor list
+    ========================================================= -->
+    <section class="dashboard-main-column">
+
+      <h1 class="dashboard-greeting">
+        Good day, <span class="format-text" id="studentFirstName">John</span>!
+      </h1>
+
+      <p class="dashboard-subtitle">Find your professors and connect with them anytime, anywhere.</p>
+
+      <div class="search-bar">
+        <span class="search-icon" aria-hidden="true">&#128269;</span>
+        <input
+          type="text"
+          class="search-input"
+          id="professorSearchInput"
+          placeholder="Search Professor"
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="professor-list-container">
+        <div class="professor-list" id="professorList">
+
+          <article class="professor-card">
+            <img src="images/professor-maria-nina-sales.jpg" alt="Engr. Maria Nina Sales" class="professor-photo">
+            <div class="professor-info">
+              <p class="professor-name">Engr. Maria Nina Sales</p>
+              <p class="professor-meta">Computer Engineering | Available</p>
+            </div>
+            <span class="status-dot status-available" aria-hidden="true"></span>
+          </article>
+
+          <article class="professor-card">
+            <img src="images/professor-bernard-bisuecos.jpg" alt="Engr. Bernard Bisuecos" class="professor-photo">
+            <div class="professor-info">
+              <p class="professor-name">Engr. Bernard Bisuecos</p>
+              <p class="professor-meta">Computer Engineering | On Leave</p>
+            </div>
+            <span class="status-dot status-onleave" aria-hidden="true"></span>
+          </article>
+
+          <article class="professor-card">
+            <img src="images/professor-mervin-molina.jpg" alt="Engr. Mervin Molina" class="professor-photo">
+            <div class="professor-info">
+              <p class="professor-name">Engr. Mervin Molina</p>
+              <p class="professor-meta">Computer Engineering | Teaching Class</p>
+            </div>
+            <span class="status-dot status-teaching" aria-hidden="true"></span>
+          </article>
+
+        </div>
+
+        <p class="no-results-message" id="noResultsMessage" hidden>No professor found.</p>
+      </div>
+
+    </section>
+
+    <!-- =========================================================
+         RIGHT COLUMN: Faculty Availability + Recent Notifications
+    ========================================================= -->
+    <aside class="dashboard-side-column">
+
+      <div class="panel-card">
+        <h2 class="panel-title">Faculty Availability</h2>
+        <ul class="availability-list">
+          <li><span class="status-dot status-available" aria-hidden="true"></span> Engr. Maria Nina Sales | Available</li>
+          <li><span class="status-dot status-teaching" aria-hidden="true"></span> Engr. Mervin Molina | Teaching Class</li>
+          <li><span class="status-dot status-meeting" aria-hidden="true"></span> Engr. Rose Onate | Meeting</li>
+          <li><span class="status-dot status-offline" aria-hidden="true"></span> Engr. Melody Paned | Offline</li>
+        </ul>
+      </div>
+
+      <div class="panel-card">
+        <h2 class="panel-title">Recent Notifications</h2>
+        <ul class="notifications-list">
+          <li><span class="notification-check" aria-hidden="true">&check;</span> Your consultation request was accepted.</li>
+        </ul>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <script src="student-dashboard.js"></script>
+</body>
+</html>

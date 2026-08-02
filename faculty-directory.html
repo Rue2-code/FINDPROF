@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prof Consult | Faculty Directory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="faculty-directory.css">
+</head>
+<body>
+
+  <!-- =========================================================
+       TOP NAVIGATION BAR -- same as the Student Dashboard, plus
+       a Notification icon placeholder beside Quick Action
+  ========================================================= -->
+  <header class="dashboard-navbar">
+    <div class="navbar-left">
+      <button type="button" class="nav-icon-button hamburger-button" id="hamburgerButton" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <img src="images/whitepf.png" alt="Prof Consult Logo" class="navbar-logo">
+    </div>
+
+    <div class="navbar-right">
+      <!-- Quick Action trigger -->
+      <button type="button" class="nav-icon-button notification-button" id="quickActionButton" aria-haspopup="true" aria-expanded="false" aria-label="Quick actions">
+        <img src="images/actionbutton.png" alt="">
+      </button>
+
+      <!-- Quick Action popup -->
+      <div class="quick-action-panel" id="quickActionPanel" hidden>
+        <div class="quick-action-header">
+          <img src="images/actionbutton.png" alt="" class="quick-action-icon">
+          <div>
+            <p class="format-text quick-action-title">Quick Action</p>
+            <p class="quick-action-subtitle">What would you like to do?</p>
+          </div>
+        </div>
+
+        <div class="quick-action-item">
+          <div class="quick-action-item-text-block">
+            <p class="quick-action-item-title">Find Faculty</p>
+            <p class="quick-action-item-text">Search and view real-time faculty availability.</p>
+          </div>
+          <a href="faculty-directory.html" class="quick-action-button" data-nav="find-faculty">View Directory</a>
+        </div>
+
+        <div class="quick-action-item">
+          <div class="quick-action-item-text-block">
+            <p class="quick-action-item-title">Request Consultation</p>
+            <p class="quick-action-item-text">Schedule a conversation with your professor.</p>
+          </div>
+          <a href="#" class="quick-action-button" id="requestConsultationButton">Send Request</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       BURGER SIDEBAR -- identical to the Student Dashboard
+  ========================================================= -->
+  <div class="sidebar-overlay" id="sidebarOverlay" hidden></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img src="images/whitepf.png" alt="Prof Consult Logo" class="sidebar-logo">
+      <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Close menu">&times;</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="student-dashboard.html" class="sidebar-link">Dashboard</a>
+      <a href="faculty-directory.html" class="sidebar-link is-active">Faculty</a>
+      <a href="my-requests.html" class="sidebar-link">My Requests</a>
+      <a href="notifications.html" class="sidebar-link">Notifications</a>
+      <a href="student-profile.html" class="sidebar-link">Profile</a>
+      <a href="settings.html" class="sidebar-link">Settings</a>
+      <a href="student-login.html" class="sidebar-link">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- =========================================================
+       BACKGROUND -- identical to the Student Dashboard
+  ========================================================= -->
+  <div class="page-background" aria-hidden="true">
+    <img src="images/coea.jpg" alt="" class="page-background-image">
+    <div class="page-background-overlay"></div>
+  </div>
+
+  <!-- =========================================================
+       MAIN CONTENT
+  ========================================================= -->
+  <main class="directory-page">
+
+    <div class="directory-header">
+      <h1 class="format-text directory-title">Faculty Directory</h1>
+      <p class="directory-subtitle">Browse all faculty members and check their real-time availability.</p>
+
+      <div class="search-bar">
+        <span class="search-icon" aria-hidden="true">&#128269;</span>
+        <input
+          type="text"
+          class="search-input"
+          id="facultySearchInput"
+          placeholder="Search Faculty"
+          autocomplete="off"
+        >
+      </div>
+    </div>
+
+    <div class="directory-body" id="directoryBody">
+
+      <!-- =========================================================
+           FACULTY LIST
+      ========================================================= -->
+      <div class="faculty-list-container">
+        <div class="faculty-list" id="facultyList">
+          <!-- Faculty cards are rendered here by faculty-directory.js -->
+        </div>
+        <p class="no-results-message" id="noResultsMessage" hidden>No faculty found.</p>
+      </div>
+
+      <!-- =========================================================
+           FACULTY PROFILE PANEL
+           Hidden until a faculty member's "View Profile" is clicked
+      ========================================================= -->
+      <div class="faculty-profile-panel" id="facultyProfilePanel">
+        <button type="button" class="profile-panel-close" id="profilePanelClose" aria-label="Close profile">&times;</button>
+
+        <img src="images/professor-default.jpg" alt="" class="profile-panel-photo" id="profilePanelPhoto">
+
+        <h2 class="profile-panel-name" id="profilePanelName">&nbsp;</h2>
+
+        <span class="profile-panel-status" id="profilePanelStatus">
+          <span class="status-dot" id="profilePanelStatusDot" aria-hidden="true"></span>
+          <span id="profilePanelStatusText">&nbsp;</span>
+        </span>
+
+        <div class="profile-panel-section">
+          <h3 class="profile-panel-section-title">Office Hours</h3>
+          <ul class="office-hours-list">
+            <li>Monday</li>
+            <li>Tuesday</li>
+            <li>Wednesday</li>
+            <li>Thursday</li>
+            <li>Friday</li>
+          </ul>
+        </div>
+
+        <div class="profile-panel-section">
+          <h3 class="profile-panel-section-title">Today's Schedule</h3>
+        </div>
+
+        <a href="request-consultation.html" class="btn request-consultation-button" id="requestConsultationLink">
+          Request Consultation
+        </a>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script src="faculty-data.js"></script>
+  <script src="faculty-directory.js"></script>
+</body>
+</html>
