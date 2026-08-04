@@ -234,6 +234,32 @@ document.addEventListener("DOMContentLoaded", () => {
       // stand-in so request-submitted.html can display it
       sessionStorage.setItem("profconsult_last_request", JSON.stringify(requestData));
 
+      // Also add this request to the persistent My Requests list
+      // so it automatically shows up on my-requests.html, growing
+      // that list every time a request is submitted.
+      try {
+        const MY_REQUESTS_KEY = "profconsult_my_requests";
+        const existing = JSON.parse(localStorage.getItem(MY_REQUESTS_KEY) || "[]");
+
+        const dateLabel = requestData.preferredDate
+          ? new Date(`${requestData.preferredDate}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric" })
+          : "";
+        const timeLabel = requestData.preferredTime ? requestData.preferredTime.split("\u2013")[0].trim() : "";
+
+        existing.unshift({
+          title: requestData.purpose || "Consultation",
+          date: dateLabel,
+          time: timeLabel,
+          status: "waiting",
+          statusLabel: "Waiting",
+        });
+
+        localStorage.setItem(MY_REQUESTS_KEY, JSON.stringify(existing));
+      } catch (error) {
+        // Storage unavailable -- the request still submits, it just
+        // won't show up on My Requests until storage works again
+      }
+
       window.location.href = "request-submitted.html";
     });
   }

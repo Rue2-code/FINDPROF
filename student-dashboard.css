@@ -127,6 +127,23 @@ input {
 
 .navbar-right {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notification-bell-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.notification-bell-button img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .notification-button {

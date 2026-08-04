@@ -3,19 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prof Consult | Student Profile</title>
+  <title>Prof Consult | My Consultation Requests</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="student-profile.css">
+  <link rel="stylesheet" href="my-requests.css">
 </head>
 <body>
 
   <!-- =========================================================
-       TOP NAVIGATION BAR -- identical to the Student Dashboard
+       TOP NAVIGATION BAR
+       Copied verbatim from the Student Dashboard (working reference),
+       with an added Notification bell icon beside Quick Action
   ========================================================= -->
   <header class="dashboard-navbar">
     <div class="navbar-left">
+      <!-- Hamburger menu -- clickable, functionality not implemented yet -->
       <button type="button" class="nav-icon-button hamburger-button" id="hamburgerButton" aria-label="Open menu">
         <span></span>
         <span></span>
@@ -35,7 +38,7 @@
         <img src="images/notification-icon.png" alt="">
       </button>
 
-      <!-- Quick Action popup: two actions, one shared "View Directory" button -->
+      <!-- Quick Action popup -->
       <div class="quick-action-panel" id="quickActionPanel" hidden>
         <div class="quick-action-header">
           <img src="images/quick-action-icon.png" alt="" class="quick-action-icon">
@@ -56,16 +59,17 @@
         <div class="quick-action-item">
           <div class="quick-action-item-text-block">
             <p class="quick-action-item-title">Request Consultation</p>
-            <p class="quick-action-item-text">Schedule a conversation with your professor.</p>
+            <p class="quick-action-item-text">Schedule a consultation with your selected faculty member.</p>
           </div>
-          <a href="#" class="quick-action-button" id="requestConsultationButton">Send Request</a>
+          <a href="request-consultation.html" class="quick-action-button" id="requestConsultationButton">Send Request</a>
         </div>
       </div>
     </div>
   </header>
 
   <!-- =========================================================
-       BURGER SIDEBAR -- identical to the Student Dashboard
+       BURGER SIDEBAR
+       Copied verbatim from the Student Dashboard (working reference)
   ========================================================= -->
   <div class="sidebar-overlay" id="sidebarOverlay" hidden></div>
 
@@ -78,16 +82,17 @@
     <nav class="sidebar-nav">
       <a href="student-dashboard.html" class="sidebar-link">Dashboard</a>
       <a href="faculty-directory.html" class="sidebar-link">Faculty</a>
-      <a href="my-requests.html" class="sidebar-link">My Requests</a>
+      <a href="my-requests.html" class="sidebar-link is-active">My Requests</a>
       <a href="notifications.html" class="sidebar-link">Notifications</a>
-      <a href="student-profile.html" class="sidebar-link is-active">Profile</a>
+      <a href="student-profile.html" class="sidebar-link">Profile</a>
       <a href="settings.html" class="sidebar-link">Settings</a>
       <a href="student-login.html" class="sidebar-link">Logout</a>
     </nav>
   </aside>
 
   <!-- =========================================================
-       BACKGROUND -- identical to the Student Dashboard
+       BACKGROUND
+       Copied verbatim from the Student Dashboard (working reference)
   ========================================================= -->
   <div class="page-background" aria-hidden="true">
     <img src="images/student-dashboard-background.jpg" alt="" class="page-background-image">
@@ -95,78 +100,23 @@
   </div>
 
   <!-- =========================================================
-       MAIN PROFILE CARD
+       MAIN CONTENT
   ========================================================= -->
-  <main class="profile-page">
+  <main class="requests-page">
 
-    <div class="profile-card">
+    <h1 class="format-text requests-title">My Consultation Requests</h1>
+    <p class="requests-subtitle">Track the status of every consultation request you've submitted.</p>
 
-      <h1 class="format-text profile-title">Student Profile</h1>
-
-      <!-- Student Information Card -->
-      <div class="profile-info-card">
-
-        <div class="profile-photo-wrapper">
-          <img src="images/student-profile-photo.jpg" alt="John Dela Cruz" class="profile-photo" id="profilePhoto">
-          <label class="profile-photo-edit" id="profilePhotoEdit" hidden>
-            <input type="file" id="profilePhotoInput" accept="image/*" class="profile-photo-input">
-            <span aria-hidden="true">&#9998;</span>
-          </label>
-        </div>
-
-        <div class="profile-fields">
-
-          <div class="profile-field-row">
-            <label for="profileFullName">Full Name</label>
-            <input type="text" id="profileFullName" class="profile-field profile-field-highlight" value="John Dela Cruz" readonly>
-          </div>
-
-          <div class="profile-field-row">
-            <label for="profileStudentNumber">Student Number</label>
-            <input type="text" id="profileStudentNumber" class="profile-field" value="24-00001" readonly disabled>
-          </div>
-
-          <div class="profile-field-row">
-            <label for="profileCourse">Course</label>
-            <select id="profileCourse" class="profile-field profile-select" disabled>
-              <option value="computer-engineering" selected>BSCPE (Computer Engineering)</option>
-            </select>
-          </div>
-
-          <div class="profile-field-row">
-            <label for="profileYearLevel">Year Level</label>
-            <select id="profileYearLevel" class="profile-field profile-select" disabled>
-              <option value="1">1st Year</option>
-              <option value="2">2nd Year</option>
-              <option value="3" selected>3rd Year</option>
-              <option value="4">4th Year</option>
-              <option value="5">5th Year</option>
-            </select>
-          </div>
-
-          <div class="profile-field-row">
-            <label for="profileEmail">Email</label>
-            <input type="email" id="profileEmail" class="profile-field" value="john.delacruz@example.com" readonly>
-          </div>
-
-          <div class="profile-field-row">
-            <label for="profilePhone">Phone Number</label>
-            <div class="profile-phone-group">
-              <span class="profile-phone-prefix">+63</span>
-              <input type="tel" id="profilePhone" class="profile-field profile-phone-input" value="912-345-6789" inputmode="numeric" readonly>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      <button type="button" class="btn edit-profile-button" id="editProfileButton">Edit Profile</button>
-
+    <div class="requests-list" id="requestsList">
+      <!-- Populated by my-requests.js, newest first -->
     </div>
+
+    <p class="no-requests-message" id="noRequestsMessage" hidden>
+      You haven't submitted any consultation requests yet.
+    </p>
 
   </main>
 
-  <script src="student-profile.js"></script>
+  <script src="my-requests.js"></script>
 </body>
 </html>

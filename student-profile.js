@@ -120,6 +120,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------------------------------------------------------
+  // Notification bell -- clickable placeholder, no
+  // functionality implemented yet
+  // ---------------------------------------------------------
+  const notificationBellButton = document.getElementById("notificationBellButton");
+  if (notificationBellButton) {
+    notificationBellButton.addEventListener("click", () => {
+      // Intentionally left empty -- functionality comes later
+    });
+  }
+
+  // ---------------------------------------------------------
   // Edit Profile: toggles all fields except Student Number
   // between read-only and editable. No backend yet, so
   // "Save Changes" just exits edit mode -- the values already

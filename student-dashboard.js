@@ -120,6 +120,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------------------------------------------------------
+  // Notification bell -- clickable placeholder, no
+  // functionality implemented yet
+  // ---------------------------------------------------------
+  const notificationBellButton = document.getElementById("notificationBellButton");
+  if (notificationBellButton) {
+    notificationBellButton.addEventListener("click", () => {
+      // Intentionally left empty -- functionality comes later
+    });
+  }
+
+  // ---------------------------------------------------------
   // Search Professor: real-time, case-insensitive, partial-match
   // filtering of the professor cards. Shows "No professor found."
   // when nothing matches; empty search restores the full list.
