@@ -17,6 +17,7 @@
   --color-status-meeting: #2a7de1;
   --color-status-offline: #b9b9b9;
   --color-status-onleave: #e0405a;
+  --color-status-consultation: #8b3fd6;
 
   --font-main: 'Montserrat', sans-serif;
 
@@ -421,6 +422,13 @@ input {
   margin-bottom: 8px;
 }
 
+.dashboard-datetime {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-red-primary);
+  margin-bottom: 14px;
+}
+
 .dashboard-subtitle {
   font-size: 0.9rem;
   color: var(--color-text-muted);
@@ -449,7 +457,7 @@ input {
 
 .search-input {
   width: 100%;
-  padding: 14px 20px 14px 48px;
+  padding: 14px 52px 14px 48px;
   border: none;
   border-radius: 999px;
   background-color: #e3e3e3;
@@ -464,6 +472,84 @@ input {
 .search-input:focus {
   outline: 2px solid var(--color-gradient-end);
   outline-offset: 2px;
+}
+
+/* Filter trigger -- sits on the far right edge of the search bar */
+.filter-button {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.filter-button:hover,
+.filter-button[aria-expanded="true"] {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: var(--color-text-dark);
+}
+
+.filter-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+/* Status filter popup -- gradient card with white pill buttons,
+   matching the system's brand gradient */
+.filter-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  z-index: 200;
+
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.filter-panel.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.filter-option {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: var(--color-text-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.filter-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
+}
+
+.filter-option.is-active {
+  background: linear-gradient(90deg, var(--color-gradient-start) 0%, var(--color-gradient-end) 100%);
+  color: var(--color-text-light);
 }
 
 /* =========================================================
@@ -487,7 +573,7 @@ input {
 }
 
 .no-results-message {
-  padding: 16px 4px 4px;
+  padding: 28px 16px;
   text-align: center;
   font-size: 0.85rem;
   color: var(--color-text-muted);
@@ -565,6 +651,7 @@ input {
 .status-meeting { background-color: var(--color-status-meeting); }
 .status-offline { background-color: var(--color-status-offline); }
 .status-onleave { background-color: var(--color-status-onleave); }
+.status-consultation { background-color: var(--color-status-consultation); }
 
 /* =========================================================
    SIDE PANELS
@@ -603,6 +690,10 @@ input {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
 }
 
 .availability-list li,
@@ -669,6 +760,10 @@ input {
     margin-bottom: 18px;
   }
 
+  .dashboard-datetime {
+    font-size: 0.82rem;
+  }
+
   .professor-card {
     padding: 10px 12px;
   }
@@ -708,5 +803,11 @@ input {
 
   .professor-list {
     max-height: 300px;
+  }
+
+  /* Filter popup stays fully visible and doesn't overflow the screen */
+  .filter-panel {
+    width: min(200px, 70vw);
+    right: -4px;
   }
 }

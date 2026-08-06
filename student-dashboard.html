@@ -113,6 +113,8 @@
         Good day, <span class="format-text" id="studentFirstName">John</span>!
       </h1>
 
+      <p class="dashboard-datetime" id="dashboardDateTime" aria-live="off"></p>
+
       <p class="dashboard-subtitle">Find your professors and connect with them anytime, anywhere.</p>
 
       <div class="search-bar">
@@ -124,12 +126,27 @@
           placeholder="Search Professor"
           autocomplete="off"
         >
+
+        <!-- Status filter trigger -->
+        <button type="button" class="filter-button" id="filterButton" aria-haspopup="true" aria-expanded="false" aria-label="Filter by status">
+          <span class="filter-icon" aria-hidden="true">&#9660;</span>
+        </button>
+
+        <!-- Status filter popup -->
+        <div class="filter-panel" id="filterPanel" hidden>
+          <button type="button" class="filter-option" data-status="available">Available</button>
+          <button type="button" class="filter-option" data-status="teaching">In Class</button>
+          <button type="button" class="filter-option" data-status="meeting">Meeting</button>
+          <button type="button" class="filter-option" data-status="consultation">Consultation</button>
+          <button type="button" class="filter-option" data-status="onleave">On Leave</button>
+          <button type="button" class="filter-option" data-status="offline">Offline</button>
+        </div>
       </div>
 
       <div class="professor-list-container">
         <div class="professor-list" id="professorList">
 
-          <article class="professor-card">
+          <article class="professor-card" data-status="available">
             <img src="images/professor-maria-nina-sales.jpg" alt="Engr. Maria Nina Sales" class="professor-photo">
             <div class="professor-info">
               <p class="professor-name">Engr. Maria Nina Sales</p>
@@ -138,7 +155,7 @@
             <span class="status-dot status-available" aria-hidden="true"></span>
           </article>
 
-          <article class="professor-card">
+          <article class="professor-card" data-status="onleave">
             <img src="images/professor-bernard-bisuecos.jpg" alt="Engr. Bernard Bisuecos" class="professor-photo">
             <div class="professor-info">
               <p class="professor-name">Engr. Bernard Bisuecos</p>
@@ -147,7 +164,7 @@
             <span class="status-dot status-onleave" aria-hidden="true"></span>
           </article>
 
-          <article class="professor-card">
+          <article class="professor-card" data-status="teaching">
             <img src="images/professor-mervin-molina.jpg" alt="Engr. Mervin Molina" class="professor-photo">
             <div class="professor-info">
               <p class="professor-name">Engr. Mervin Molina</p>
@@ -156,9 +173,18 @@
             <span class="status-dot status-teaching" aria-hidden="true"></span>
           </article>
 
+          <article class="professor-card" data-status="offline">
+            <img src="images/professor-melody-paned.jpg" alt="Engr. Melody Paned" class="professor-photo">
+            <div class="professor-info">
+              <p class="professor-name">Engr. Melody Paned</p>
+              <p class="professor-meta">Computer Engineering | Offline</p>
+            </div>
+            <span class="status-dot status-offline" aria-hidden="true"></span>
+          </article>
+
         </div>
 
-        <p class="no-results-message" id="noResultsMessage" hidden>No professor found.</p>
+        <p class="no-results-message" id="noResultsMessage" hidden>No faculty members match your search or selected status.</p>
       </div>
 
     </section>
@@ -170,7 +196,7 @@
 
       <div class="panel-card">
         <h2 class="panel-title">Faculty Availability</h2>
-        <ul class="availability-list">
+        <ul class="availability-list" id="availabilityList">
           <li><span class="status-dot status-available" aria-hidden="true"></span> Engr. Maria Nina Sales | Available</li>
           <li><span class="status-dot status-teaching" aria-hidden="true"></span> Engr. Mervin Molina | Teaching Class</li>
           <li><span class="status-dot status-meeting" aria-hidden="true"></span> Engr. Rose Onate | Meeting</li>
@@ -180,7 +206,7 @@
 
       <div class="panel-card">
         <h2 class="panel-title">Recent Notifications</h2>
-        <ul class="notifications-list">
+        <ul class="notifications-list" id="notificationsList">
           <li><span class="notification-check" aria-hidden="true">&check;</span> Your consultation request was accepted.</li>
         </ul>
       </div>

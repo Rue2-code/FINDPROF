@@ -7,7 +7,8 @@
 // - Quick Action: fade/slide popup with Find Faculty and
 //   Request Consultation actions
 // - Search Professor: real-time, case-insensitive, partial-match
-//   filtering with a "No professor found." empty state
+//   filtering, combined with an optional status filter, with a
+//   shared empty state when nothing matches
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -27,6 +28,55 @@ document.addEventListener("DOMContentLoaded", () => {
   const firstNameEl = document.getElementById("studentFirstName");
   if (firstNameEl) {
     firstNameEl.textContent = SAMPLE_STUDENT.firstName;
+  }
+
+  // ---------------------------------------------------------
+  // Live Philippine date and time, directly below the greeting.
+  // Uses Intl.DateTimeFormat with the Asia/Manila timezone so
+  // it always reflects Philippine time regardless of the
+  // visitor's own device timezone, and re-renders every second
+  // via setInterval so it stays live without a page refresh.
+  // ---------------------------------------------------------
+  const dashboardDateTimeEl = document.getElementById("dashboardDateTime");
+
+  if (dashboardDateTimeEl) {
+    const philippineDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Manila",
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+
+    function renderPhilippineDateTime() {
+      // Intl.DateTimeFormat.formatToParts lets us control spacing/
+      // punctuation exactly (e.g. "June 22, 2026 9:56:03 PM")
+      // instead of depending on the locale's default separators.
+      const parts = philippineDateTimeFormatter.formatToParts(new Date());
+      const get = (type) => {
+        const part = parts.find((p) => p.type === type);
+        return part ? part.value : "";
+      };
+
+      const weekday = get("weekday");
+      const month = get("month");
+      const day = get("day");
+      const year = get("year");
+      const hour = get("hour");
+      const minute = get("minute");
+      const second = get("second");
+      const dayPeriod = get("dayPeriod");
+
+      dashboardDateTimeEl.textContent =
+        `${weekday}, ${month} ${day}, ${year} ${hour}:${minute}:${second} ${dayPeriod}`;
+    }
+
+    renderPhilippineDateTime();
+    setInterval(renderPhilippineDateTime, 1000);
   }
 
   // ---------------------------------------------------------
@@ -98,17 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  document.addEventListener("click", (event) => {
-    if (
-      quickActionPanel &&
-      !quickActionPanel.hidden &&
-      !quickActionPanel.contains(event.target) &&
-      event.target !== quickActionButton
-    ) {
-      closeQuickAction();
-    }
-  });
-
   // "Send Request" doesn't have a destination page yet --
   // left wired up but intentionally not navigating anywhere
   const requestConsultationButton = document.getElementById("requestConsultationButton");
@@ -131,28 +170,120 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------------------------------------------------------
-  // Search Professor: real-time, case-insensitive, partial-match
-  // filtering of the professor cards. Shows "No professor found."
-  // when nothing matches; empty search restores the full list.
+  // Status Filter popup: fades/slides in below the filter icon
+  // at the right edge of the search bar. Closes when clicking
+  // its trigger again or anywhere outside.
+  // ---------------------------------------------------------
+  const filterButton = document.getElementById("filterButton");
+  const filterPanel = document.getElementById("filterPanel");
+  const filterOptions = filterPanel
+    ? Array.from(filterPanel.querySelectorAll(".filter-option"))
+    : [];
+
+  function openFilterPanel() {
+    filterPanel.hidden = false;
+    requestAnimationFrame(() => filterPanel.classList.add("is-open"));
+    filterButton.setAttribute("aria-expanded", "true");
+  }
+
+  function closeFilterPanel() {
+    filterPanel.classList.remove("is-open");
+    filterButton.setAttribute("aria-expanded", "false");
+    window.setTimeout(() => {
+      filterPanel.hidden = true;
+    }, 200); // matches the panel's CSS transition duration
+  }
+
+  if (filterButton) {
+    filterButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = filterPanel.classList.contains("is-open");
+      if (isOpen) {
+        closeFilterPanel();
+      } else {
+        openFilterPanel();
+      }
+    });
+  }
+
+  // Close the Quick Action popup and/or the Filter popup when
+  // clicking anywhere outside of them
+  document.addEventListener("click", (event) => {
+    if (
+      quickActionPanel &&
+      !quickActionPanel.hidden &&
+      !quickActionPanel.contains(event.target) &&
+      event.target !== quickActionButton
+    ) {
+      closeQuickAction();
+    }
+
+    if (
+      filterPanel &&
+      !filterPanel.hidden &&
+      !filterPanel.contains(event.target) &&
+      event.target !== filterButton &&
+      !filterButton.contains(event.target)
+    ) {
+      closeFilterPanel();
+    }
+  });
+
+  // ---------------------------------------------------------
+  // Search Professor + Status Filter: real-time, case-insensitive,
+  // partial-match search combined with an optional status filter.
+  // Both apply together -- a professor must match the search text
+  // AND the selected status (when one is active) to stay visible.
+  // Shows a shared empty-state message when nothing matches;
+  // empty search and/or no active filter restores the full list.
   // ---------------------------------------------------------
   const searchInput = document.getElementById("professorSearchInput");
   const professorCards = Array.from(document.querySelectorAll(".professor-card"));
   const noResultsMessage = document.getElementById("noResultsMessage");
 
-  if (searchInput) {
-    searchInput.addEventListener("input", () => {
-      const query = searchInput.value.trim().toLowerCase();
-      let visibleCount = 0;
+  let activeStatus = null;
 
-      professorCards.forEach((card) => {
-        const name = card.querySelector(".professor-name").textContent.toLowerCase();
-        const matches = query === "" || name.includes(query);
-        card.hidden = !matches;
-        if (matches) visibleCount += 1;
-      });
+  function applyFilters() {
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    let visibleCount = 0;
 
-      noResultsMessage.hidden = visibleCount > 0;
+    professorCards.forEach((card) => {
+      const name = card.querySelector(".professor-name").textContent.toLowerCase();
+      const status = card.dataset.status || "";
+      const matchesSearch = query === "" || name.includes(query);
+      const matchesStatus = !activeStatus || status === activeStatus;
+      const matches = matchesSearch && matchesStatus;
+
+      card.hidden = !matches;
+      if (matches) visibleCount += 1;
     });
+
+    if (noResultsMessage) {
+      noResultsMessage.hidden = visibleCount > 0;
+    }
   }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", applyFilters);
+  }
+
+  filterOptions.forEach((option) => {
+    option.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const status = option.dataset.status;
+
+      if (activeStatus === status) {
+        // Clicking the already-active filter clears it
+        activeStatus = null;
+        option.classList.remove("is-active");
+      } else {
+        activeStatus = status;
+        filterOptions.forEach((opt) => opt.classList.remove("is-active"));
+        option.classList.add("is-active");
+      }
+
+      applyFilters();
+    });
+  });
 
 });
