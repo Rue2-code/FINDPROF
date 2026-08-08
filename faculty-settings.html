@@ -115,7 +115,47 @@
   <main class="faculty-main-content">
 
     <!-- Build the Settings page here -->
+<!-- =========================================================
+     FACULTY ACCOUNT SETTINGS -- MAIN CONTENT
+     Paste this inside <main class="faculty-main-content">...</main>
+     on faculty-settings.html, alongside the shared navbar/
+     sidebar/background shell. Do not duplicate the shell here.
+========================================================= -->
 
+<section class="faculty-card faculty-settings-card">
+
+  <h1 class="format-text faculty-settings-title">Account Settings</h1>
+
+  <div class="faculty-settings-inner-card">
+
+    <label class="faculty-settings-checkbox-row">
+      <input type="checkbox" id="emailNotificationsCheckbox" class="faculty-settings-checkbox">
+      <span class="faculty-settings-checkbox-box" aria-hidden="true"></span>
+      <span class="faculty-settings-checkbox-label">Email Notifications</span>
+    </label>
+
+    <label class="faculty-settings-checkbox-row">
+      <input type="checkbox" id="darkModeCheckbox" class="faculty-settings-checkbox">
+      <span class="faculty-settings-checkbox-box" aria-hidden="true"></span>
+      <span class="faculty-settings-checkbox-label">Dark Mode</span>
+    </label>
+
+    <label class="faculty-settings-checkbox-row">
+      <input type="checkbox" id="autoCheckInCheckbox" class="faculty-settings-checkbox">
+      <span class="faculty-settings-checkbox-box" aria-hidden="true"></span>
+      <span class="faculty-settings-checkbox-label">Auto Check-In Reminder</span>
+    </label>
+
+    <a href="faculty-change-password.html" class="faculty-change-password-link">Change Password</a>
+
+  </div>
+
+  <div class="faculty-settings-footer">
+    <p class="faculty-save-success" id="settingsSaveSuccess" hidden>Changes saved successfully.</p>
+    <button type="button" class="faculty-settings-save-button" id="saveSettingsButton">Save</button>
+  </div>
+
+</section>
   </main>
 
   <script src="faculty-shared.js"></script>
