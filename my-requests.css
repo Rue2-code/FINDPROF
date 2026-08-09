@@ -125,8 +125,39 @@ input {
   border-radius: 2px;
 }
 
+/* -----------------------------------------------------------
+   RIGHT-SIDE NAV ICONS (Notification bell + Quick Action)
+   Bell sits on the left, Quick Action trigger on the right,
+   both centered on the same horizontal line with even spacing.
+   position: static overrides any absolute/fixed positioning
+   coming from elsewhere so both buttons participate in the
+   flex layout instead of pinning to a corner.
+----------------------------------------------------------- */
 .navbar-right {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.notification-bell-button,
+.notification-button {
+  position: static;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.notification-bell-button {
+  order: 1;
+}
+
+.notification-button {
+  order: 2;
 }
 
 .notification-button {
@@ -531,6 +562,10 @@ input {
 
   .dashboard-navbar {
     padding: 0 16px;
+  }
+
+  .navbar-right {
+    gap: 10px;
   }
 
   .requests-page {

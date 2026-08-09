@@ -7,13 +7,1000 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="faculty-directory.css">
+  <style>
+/* =========================================================
+   STUDENT-SHARED.CSS
+   Shared styles for every Student-side page: top navbar,
+   burger sidebar, background, Quick Action popup, search bar
+   + status filter popup, and status-dot colors.
+
+   Page-specific files (e.g. faculty-directory.css) should NOT
+   redefine any of the selectors below -- they should only add
+   new, page-specific classes.
+========================================================= */
+
+/* =========================================================
+   CSS VARIABLES
+========================================================= */
+:root {
+  --color-red-primary: #d81f26;
+  --color-red-dark: #7a1414;
+
+  --color-gradient-start: #7a0f0f;
+  --color-gradient-end: #e8560f;
+
+  --color-text-dark: #2b2b2b;
+  --color-text-muted: #6b6b6b;
+  --color-text-light: #ffffff;
+
+  --color-status-available: #2fae4e;
+  --color-status-teaching: #f2601c;
+  --color-status-meeting: #2a7de1;
+  --color-status-offline: #b9b9b9;
+  --color-status-onleave: #e0405a;
+  --color-status-consultation: #8b3fd6;
+
+  --font-main: 'Montserrat', sans-serif;
+
+  --nav-height: 64px;
+  --content-padding-x: 60px;
+
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* =========================================================
+   RESET / BASE STYLES
+========================================================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  font-family: 'Montserrat', sans-serif;
+  color: #2b2b2b;
+  overflow-x: hidden;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: transparent;
+}
+
+input {
+  font-family: inherit;
+}
+
+/* =========================================================
+   FORMAT-TEXT
+   Reusable heading style: solid black fading into the brand
+   orange, used on every major page heading site-wide.
+========================================================= */
+.format-text {
+  display: inline-block;
+  max-width: 100%;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+
+  background: linear-gradient(
+    90deg,
+    #000000 0%,
+    #000000 42%,
+    #e8560f 78%,
+    #e8560f 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =========================================================
+   TOP NAVIGATION BAR
+========================================================= */
+.dashboard-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 60px;
+  background: linear-gradient(90deg, #7a0f0f 0%, #e8560f 100%);
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.navbar-logo {
+  height: 38px;
+  width: auto;
+}
+
+.nav-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.hamburger-button {
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+}
+
+.hamburger-button span {
+  width: 24px;
+  height: 3px;
+  background-color: #ffffff;
+  border-radius: 2px;
+}
+
+.navbar-right {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Notification bell + Quick Action sit side by side, same pill style */
+.notification-bell-button,
+.notification-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+.notification-bell-button:hover,
+.notification-button:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+.notification-bell-button img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.notification-button img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+/* =========================================================
+   QUICK ACTION POPUP
+========================================================= */
+.quick-action-panel {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 460px;
+  max-width: 92vw;
+  background-color: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  z-index: 200;
+
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.quick-action-panel.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.quick-action-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.quick-action-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.quick-action-title {
+  font-size: 1.05rem;
+  margin-bottom: 2px;
+}
+
+.quick-action-subtitle {
+  font-size: 0.78rem;
+  color: #6b6b6b;
+}
+
+.quick-action-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+}
+
+.quick-action-item + .quick-action-item {
+  border-top: 1px solid #f0f0f0;
+}
+
+.quick-action-item-text-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-action-item-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #2b2b2b;
+  margin-bottom: 4px;
+}
+
+.quick-action-item-text {
+  font-size: 0.78rem;
+  color: #6b6b6b;
+  line-height: 1.5;
+}
+
+.quick-action-button {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7a0f0f 0%, #e8560f 100%);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.quick-action-button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   BURGER SIDEBAR
+========================================================= */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background-color: rgba(20, 10, 10, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 301;
+  width: 300px;
+  max-width: 85vw;
+  background: linear-gradient(180deg, #7a0f0f 0%, #e8560f 100%);
+  box-shadow: 8px 0 30px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.sidebar.is-open {
+  transform: translateX(0);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-logo {
+  height: 34px;
+  width: auto;
+}
+
+.sidebar-close {
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: #ffffff;
+  padding: 4px 8px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-link {
+  display: block;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-link:hover,
+.sidebar-link.is-active {
+  background-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+.page-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.page-background-image {
+  position: absolute;
+  top: -20px;
+  left: -20px;
+  width: calc(100% + 40px);
+  height: calc(100% + 40px);
+  max-width: none;
+  object-fit: cover;
+  filter: blur(6px);
+}
+
+.page-background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.86);
+}
+
+/* =========================================================
+   SEARCH BAR + STATUS FILTER POPUP
+   Reused on Student Dashboard, Faculty Directory, and any
+   future page that needs a search + status filter.
+========================================================= */
+.search-bar {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  font-size: 0.95rem;
+  color: #6b6b6b;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 52px 14px 48px;
+  border: none;
+  border-radius: 999px;
+  background-color: #e3e3e3;
+  color: #2b2b2b;
+  font-size: 0.9rem;
+}
+
+.search-input::placeholder {
+  color: #7a7a7a;
+}
+
+.search-input:focus {
+  outline: 2px solid #e8560f;
+  outline-offset: 2px;
+}
+
+.filter-button {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: #6b6b6b;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.filter-button:hover,
+.filter-button[aria-expanded="true"] {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: #2b2b2b;
+}
+
+.filter-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.filter-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #7a0f0f 0%, #e8560f 100%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  z-index: 200;
+
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.filter-panel.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.filter-option {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: #2b2b2b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.filter-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
+}
+
+.filter-option.is-active {
+  background: linear-gradient(90deg, #7a0f0f 0%, #e8560f 100%);
+  color: #ffffff;
+}
+
+/* =========================================================
+   STATUS DOTS
+========================================================= */
+.status-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-available { background-color: #2fae4e; }
+.status-teaching { background-color: #f2601c; }
+.status-meeting { background-color: #2a7de1; }
+.status-offline { background-color: #b9b9b9; }
+.status-onleave { background-color: #e0405a; }
+.status-consultation { background-color: #8b3fd6; }
+
+/* =========================================================
+   RESPONSIVE ADJUSTMENTS -- shared elements only
+========================================================= */
+@media (max-width: 1024px) {
+  :root {
+    --content-padding-x: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --content-padding-x: 18px;
+  }
+
+  .dashboard-navbar {
+    padding: 0 16px;
+  }
+
+  .sidebar {
+    width: 80vw;
+    max-width: 80vw;
+  }
+
+  .quick-action-panel {
+    width: min(400px, 90vw);
+    right: -8px;
+  }
+
+  .quick-action-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .quick-action-button {
+    align-self: flex-start;
+  }
+
+  .filter-panel {
+    width: min(200px, 70vw);
+    right: -4px;
+  }
+}
+
+
+/* =========================================================
+   FACULTY-DIRECTORY.CSS
+   Page-specific styles only. Navbar, sidebar, background,
+   Quick Action, search bar, and filter popup all live in
+   student-shared.css -- do not redefine them here.
+========================================================= */
+
+.directory-content {
+  padding: 48px 60px 60px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   CONTAINER
+   Centered single column by default. When a profile is open,
+   .is-split shifts the list panel left and reveals the
+   profile panel on the right.
+========================================================= */
+.directory-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 48px;
+  transition: justify-content 0.1s ease;
+}
+
+.directory-list-panel {
+  width: 100%;
+  max-width: 520px;
+  flex: 0 1 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: max-width 0.5s ease, flex-basis 0.5s ease, transform 0.5s ease;
+}
+
+.directory-container.is-split {
+  justify-content: center;
+}
+
+.directory-container.is-split .directory-list-panel {
+  align-items: stretch;
+  text-align: left;
+}
+
+.directory-container.is-split .directory-heading,
+.directory-container.is-split .directory-subtitle {
+  align-self: flex-start;
+}
+
+/* =========================================================
+   HEADING
+========================================================= */
+.directory-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.8rem, 3.2vw, 2.4rem);
+  margin-bottom: 10px;
+}
+
+.directory-subtitle {
+  font-size: 0.9rem;
+  color: #6b6b6b;
+  margin-bottom: 24px;
+  max-width: 460px;
+}
+
+/* Center the search bar under the heading in the initial state */
+.directory-list-panel .search-bar {
+  margin-bottom: 28px;
+}
+
+/* =========================================================
+   FACULTY LIST
+========================================================= */
+.faculty-list-container {
+  width: 100%;
+  max-width: 460px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 16px;
+}
+
+.directory-container.is-split .faculty-list-container {
+  max-width: 100%;
+}
+
+.faculty-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 460px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.no-results-message {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #6b6b6b;
+}
+
+/* =========================================================
+   FACULTY CARD
+========================================================= */
+.faculty-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background-color: #f5f1ea;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+  overflow: hidden;
+}
+
+.faculty-card[hidden] {
+  display: none;
+}
+
+.faculty-card.is-selected {
+  background: linear-gradient(90deg, #7a0f0f 0%, #e8560f 100%);
+  box-shadow: 0 16px 32px rgba(122, 15, 15, 0.3);
+}
+
+.faculty-card.is-selected .faculty-name,
+.faculty-card.is-selected .faculty-meta {
+  color: #ffffff;
+}
+
+.faculty-photo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.faculty-info {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.faculty-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #2b2b2b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  margin-bottom: 4px;
+  transition: color 0.25s ease;
+}
+
+.faculty-meta {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b6b6b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.25s ease;
+}
+
+.faculty-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.faculty-meta-dot {
+  color: inherit;
+  opacity: 0.6;
+  font-size: 0.6rem;
+}
+
+.faculty-status-dot {
+  flex-shrink: 0;
+}
+
+/* "View Profile" button -- revealed on hover/focus, and always
+   shown (highlighted) on the currently selected card */
+.view-profile-button {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7a0f0f 0%, #e8560f 100%);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  opacity: 0;
+  transform: translateX(6px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.faculty-card:hover .view-profile-button,
+.faculty-card:focus-within .view-profile-button,
+.faculty-card.is-selected .view-profile-button {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* On touch devices there's no hover -- keep the button visible
+   but smaller so cards stay usable without a pointer */
+@media (hover: none) {
+  .view-profile-button {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    padding: 8px 14px;
+  }
+}
+
+/* =========================================================
+   PROFILE PANEL
+   Hidden/off-canvas by default; slides + fades in from the
+   right when a faculty card's "View Profile" is clicked.
+========================================================= */
+.directory-profile-panel {
+  flex: 1 1 460px;
+  max-width: 460px;
+  width: 100%;
+
+  background-color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 32px;
+
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.directory-profile-panel.is-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.profile-photo {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 18px;
+}
+
+.profile-name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #2b2b2b;
+  margin-bottom: 6px;
+}
+
+.profile-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.profile-status-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b6b6b;
+}
+
+.profile-program {
+  font-size: 0.82rem;
+  color: #6b6b6b;
+  margin-bottom: 6px;
+}
+
+.profile-office {
+  font-size: 0.82rem;
+  color: #6b6b6b;
+  margin-bottom: 24px;
+}
+
+.profile-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #d81f26;
+  margin-bottom: 14px;
+}
+
+.profile-hours-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.profile-hours-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-hours-day {
+  font-weight: 600;
+  color: #2b2b2b;
+}
+
+.profile-hours-time {
+  color: #6b6b6b;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.request-consultation-button {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 15px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7a0f0f 0%, #e8560f 100%);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 12px 24px rgba(122, 15, 15, 0.25);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.request-consultation-button:hover {
+  opacity: 0.92;
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   RESPONSIVE ADJUSTMENTS
+========================================================= */
+@media (max-width: 1024px) {
+  .directory-container,
+  .directory-container.is-split {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .directory-list-panel,
+  .directory-container.is-split .directory-list-panel {
+    max-width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+
+  .directory-container.is-split .directory-heading,
+  .directory-container.is-split .directory-subtitle {
+    align-self: center;
+  }
+
+  .faculty-list-container,
+  .directory-list-panel .search-bar {
+    max-width: 100%;
+  }
+
+  .directory-profile-panel {
+    max-width: 100%;
+    transform: translateY(24px);
+  }
+
+  .directory-profile-panel.is-visible {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .directory-content {
+    padding: 32px 18px 40px;
+  }
+
+  .directory-heading {
+    font-size: 1.5rem;
+  }
+
+  .faculty-card {
+    padding: 12px;
+  }
+
+  .faculty-photo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .directory-profile-panel {
+    padding: 24px 20px;
+  }
+}
+
+  </style>
 </head>
 <body>
 
   <!-- =========================================================
-       TOP NAVIGATION BAR -- same as the Student Dashboard, plus
-       a Notification icon placeholder beside Quick Action
+       TOP NAVIGATION BAR (shared)
   ========================================================= -->
   <header class="dashboard-navbar">
     <div class="navbar-left">
@@ -22,19 +1009,24 @@
         <span></span>
         <span></span>
       </button>
-      <img src="images/whitepf.png" alt="Prof Consult Logo" class="navbar-logo">
+      <img src="images/logo.png" alt="Prof Consult Logo" class="navbar-logo">
     </div>
 
     <div class="navbar-right">
+      <!-- Notification bell -- placeholder, navigates to notifications.html -->
+      <button type="button" class="nav-icon-button notification-bell-button" id="notificationBellButton" aria-label="Notifications">
+        <img src="images/notification-bell-icon.png" alt="">
+      </button>
+
       <!-- Quick Action trigger -->
       <button type="button" class="nav-icon-button notification-button" id="quickActionButton" aria-haspopup="true" aria-expanded="false" aria-label="Quick actions">
-        <img src="images/actionbutton.png" alt="">
+        <img src="images/notification-icon.png" alt="">
       </button>
 
       <!-- Quick Action popup -->
       <div class="quick-action-panel" id="quickActionPanel" hidden>
         <div class="quick-action-header">
-          <img src="images/actionbutton.png" alt="" class="quick-action-icon">
+          <img src="images/quick-action-icon.png" alt="" class="quick-action-icon">
           <div>
             <p class="format-text quick-action-title">Quick Action</p>
             <p class="quick-action-subtitle">What would you like to do?</p>
@@ -61,13 +1053,13 @@
   </header>
 
   <!-- =========================================================
-       BURGER SIDEBAR -- identical to the Student Dashboard
+       BURGER SIDEBAR (shared)
   ========================================================= -->
   <div class="sidebar-overlay" id="sidebarOverlay" hidden></div>
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <img src="images/whitepf.png" alt="Prof Consult Logo" class="sidebar-logo">
+      <img src="images/logo.png" alt="Prof Consult Logo" class="sidebar-logo">
       <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Close menu">&times;</button>
     </div>
 
@@ -83,87 +1075,523 @@
   </aside>
 
   <!-- =========================================================
-       BACKGROUND -- identical to the Student Dashboard
+       BACKGROUND (shared)
   ========================================================= -->
   <div class="page-background" aria-hidden="true">
-    <img src="images/coea.jpg" alt="" class="page-background-image">
+    <img src="images/student-dashboard-background.jpg" alt="" class="page-background-image">
     <div class="page-background-overlay"></div>
   </div>
 
   <!-- =========================================================
-       MAIN CONTENT
+       MAIN DIRECTORY CONTENT (page-specific)
   ========================================================= -->
-  <main class="directory-page">
+  <main class="directory-content">
+    <div class="directory-container" id="directoryContainer">
 
-    <div class="directory-header">
-      <h1 class="format-text directory-title">Faculty Directory</h1>
-      <p class="directory-subtitle">Browse all faculty members and check their real-time availability.</p>
+      <!-- LIST PANEL: heading, search, faculty cards -->
+      <section class="directory-list-panel" id="directoryListPanel">
 
-      <div class="search-bar">
-        <span class="search-icon" aria-hidden="true">&#128269;</span>
-        <input
-          type="text"
-          class="search-input"
-          id="facultySearchInput"
-          placeholder="Search Faculty"
-          autocomplete="off"
-        >
-      </div>
-    </div>
+        <h1 class="directory-heading format-text">FACULTY DIRECTORY</h1>
+        <p class="directory-subtitle">Search by name or specialization, then view a professor's profile to request a consultation.</p>
 
-    <div class="directory-body" id="directoryBody">
+        <div class="search-bar">
+          <span class="search-icon" aria-hidden="true">&#128269;</span>
+          <input
+            type="text"
+            class="search-input"
+            id="facultySearchInput"
+            placeholder="Search faculty name or specialization..."
+            autocomplete="off"
+          >
 
-      <!-- =========================================================
-           FACULTY LIST
-      ========================================================= -->
-      <div class="faculty-list-container">
-        <div class="faculty-list" id="facultyList">
-          <!-- Faculty cards are rendered here by faculty-directory.js -->
-        </div>
-        <p class="no-results-message" id="noResultsMessage" hidden>No faculty found.</p>
-      </div>
+          <button type="button" class="filter-button" id="filterButton" aria-haspopup="true" aria-expanded="false" aria-label="Filter by status">
+            <span class="filter-icon" aria-hidden="true">&#9660;</span>
+          </button>
 
-      <!-- =========================================================
-           FACULTY PROFILE PANEL
-           Hidden until a faculty member's "View Profile" is clicked
-      ========================================================= -->
-      <div class="faculty-profile-panel" id="facultyProfilePanel">
-        <button type="button" class="profile-panel-close" id="profilePanelClose" aria-label="Close profile">&times;</button>
-
-        <img src="images/professor-default.jpg" alt="" class="profile-panel-photo" id="profilePanelPhoto">
-
-        <h2 class="profile-panel-name" id="profilePanelName">&nbsp;</h2>
-
-        <span class="profile-panel-status" id="profilePanelStatus">
-          <span class="status-dot" id="profilePanelStatusDot" aria-hidden="true"></span>
-          <span id="profilePanelStatusText">&nbsp;</span>
-        </span>
-
-        <div class="profile-panel-section">
-          <h3 class="profile-panel-section-title">Office Hours</h3>
-          <ul class="office-hours-list">
-            <li>Monday</li>
-            <li>Tuesday</li>
-            <li>Wednesday</li>
-            <li>Thursday</li>
-            <li>Friday</li>
-          </ul>
+          <div class="filter-panel" id="filterPanel" hidden>
+            <button type="button" class="filter-option" data-status="available">Available</button>
+            <button type="button" class="filter-option" data-status="teaching">In Class</button>
+            <button type="button" class="filter-option" data-status="meeting">Meeting</button>
+            <button type="button" class="filter-option" data-status="consultation">Consultation</button>
+            <button type="button" class="filter-option" data-status="onleave">On Leave</button>
+            <button type="button" class="filter-option" data-status="offline">Offline</button>
+          </div>
         </div>
 
-        <div class="profile-panel-section">
-          <h3 class="profile-panel-section-title">Today's Schedule</h3>
+        <div class="faculty-list-container">
+          <div class="faculty-list" id="facultyList">
+            <!-- Faculty cards are rendered here by faculty-directory.js
+                 from the FACULTY_DIRECTORY_DATA test data array -->
+          </div>
+          <p class="no-results-message" id="noResultsMessage" hidden>No faculty members match your search or selected status.</p>
         </div>
 
-        <a href="request-consultation.html" class="btn request-consultation-button" id="requestConsultationLink">
-          Request Consultation
-        </a>
-      </div>
+      </section>
+
+      <!-- PROFILE PANEL: detailed faculty profile, slides in from the right -->
+      <section class="directory-profile-panel" id="directoryProfilePanel" hidden>
+        <!-- Populated by faculty-directory.js when "View Profile" is clicked -->
+      </section>
 
     </div>
-
   </main>
 
-  <script src="faculty-data.js"></script>
-  <script src="faculty-directory.js"></script>
+  <script>
+// =========================================================
+// STUDENT-SHARED.JS
+// Shared behavior for every Student-side page:
+// - Burger menu: slide-in sidebar with dim/blur overlay
+// - Quick Action: fade/slide popup (Find Faculty / Send Request)
+// - Notification bell: navigates to notifications.html
+// - Status filter popup: fade/slide open + outside-click close
+//
+// Page-specific files (e.g. faculty-directory.js) should call
+// StudentShared.init() is NOT required -- this file wires
+// itself up on DOMContentLoaded. Page-specific scripts should
+// only add their own listeners for their own elements (e.g.
+// the faculty search input, faculty cards, etc.) and should
+// NOT re-declare any of the listeners below.
+// =========================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  // ---------------------------------------------------------
+  // Burger sidebar
+  // ---------------------------------------------------------
+  const hamburgerButton = document.getElementById("hamburgerButton");
+  const sidebar = document.getElementById("sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+  const sidebarClose = document.getElementById("sidebarClose");
+
+  function openSidebar() {
+    sidebar.classList.add("is-open");
+    sidebarOverlay.hidden = false;
+    requestAnimationFrame(() => sidebarOverlay.classList.add("is-open"));
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove("is-open");
+    sidebarOverlay.classList.remove("is-open");
+    window.setTimeout(() => {
+      sidebarOverlay.hidden = true;
+    }, 250);
+  }
+
+  if (hamburgerButton) hamburgerButton.addEventListener("click", openSidebar);
+  if (sidebarClose) sidebarClose.addEventListener("click", closeSidebar);
+  if (sidebarOverlay) sidebarOverlay.addEventListener("click", closeSidebar);
+
+  // ---------------------------------------------------------
+  // Quick Action popup
+  // ---------------------------------------------------------
+  const quickActionButton = document.getElementById("quickActionButton");
+  const quickActionPanel = document.getElementById("quickActionPanel");
+
+  function openQuickAction() {
+    quickActionPanel.hidden = false;
+    requestAnimationFrame(() => quickActionPanel.classList.add("is-open"));
+    quickActionButton.setAttribute("aria-expanded", "true");
+  }
+
+  function closeQuickAction() {
+    quickActionPanel.classList.remove("is-open");
+    quickActionButton.setAttribute("aria-expanded", "false");
+    window.setTimeout(() => {
+      quickActionPanel.hidden = true;
+    }, 200);
+  }
+
+  if (quickActionButton) {
+    quickActionButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = quickActionPanel.classList.contains("is-open");
+      isOpen ? closeQuickAction() : openQuickAction();
+    });
+  }
+
+  // "Send Request" doesn't have a fixed destination yet when no
+  // faculty is pre-selected -- left wired up but intentionally
+  // not navigating anywhere until that flow is defined
+  const requestConsultationButton = document.getElementById("requestConsultationButton");
+  if (requestConsultationButton) {
+    requestConsultationButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      // Future: navigate to the consultation request page once it exists
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Notification bell -- placeholder icon, navigates to the
+  // (not yet built) notifications.html
+  // ---------------------------------------------------------
+  const notificationBellButton = document.getElementById("notificationBellButton");
+  if (notificationBellButton) {
+    notificationBellButton.addEventListener("click", () => {
+      window.location.href = "notifications.html";
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Status filter popup (search bar + filter icon)
+  // Page-specific JS reads `window.StudentShared.activeStatus`
+  // and listens for the "statusfilterchange" event to re-apply
+  // its own search/filter logic.
+  // ---------------------------------------------------------
+  const filterButton = document.getElementById("filterButton");
+  const filterPanel = document.getElementById("filterPanel");
+  const filterOptions = filterPanel
+    ? Array.from(filterPanel.querySelectorAll(".filter-option"))
+    : [];
+
+  window.StudentShared = window.StudentShared || {};
+  window.StudentShared.activeStatus = null;
+
+  function openFilterPanel() {
+    filterPanel.hidden = false;
+    requestAnimationFrame(() => filterPanel.classList.add("is-open"));
+    filterButton.setAttribute("aria-expanded", "true");
+  }
+
+  function closeFilterPanel() {
+    filterPanel.classList.remove("is-open");
+    filterButton.setAttribute("aria-expanded", "false");
+    window.setTimeout(() => {
+      filterPanel.hidden = true;
+    }, 200);
+  }
+
+  if (filterButton) {
+    filterButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = filterPanel.classList.contains("is-open");
+      isOpen ? closeFilterPanel() : openFilterPanel();
+    });
+  }
+
+  filterOptions.forEach((option) => {
+    option.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const status = option.dataset.status;
+
+      if (window.StudentShared.activeStatus === status) {
+        window.StudentShared.activeStatus = null;
+        option.classList.remove("is-active");
+      } else {
+        window.StudentShared.activeStatus = status;
+        filterOptions.forEach((opt) => opt.classList.remove("is-active"));
+        option.classList.add("is-active");
+      }
+
+      document.dispatchEvent(new CustomEvent("statusfilterchange", {
+        detail: { status: window.StudentShared.activeStatus },
+      }));
+    });
+  });
+
+  // Close Quick Action and/or Filter popups on outside click
+  document.addEventListener("click", (event) => {
+    if (
+      quickActionPanel &&
+      !quickActionPanel.hidden &&
+      !quickActionPanel.contains(event.target) &&
+      event.target !== quickActionButton
+    ) {
+      closeQuickAction();
+    }
+
+    if (
+      filterPanel &&
+      !filterPanel.hidden &&
+      !filterPanel.contains(event.target) &&
+      event.target !== filterButton &&
+      !filterButton.contains(event.target)
+    ) {
+      closeFilterPanel();
+    }
+  });
+
+});
+
+
+// =========================================================
+// FACULTY-DIRECTORY.JS
+// Page-specific behavior for the Faculty Directory:
+// - Renders faculty cards from FACULTY_DIRECTORY_DATA
+// - Search-as-you-type by name or specialization/program
+// - Combines with the shared status filter (student-shared.js)
+// - "View Profile" opens the split-view profile panel with an
+//   animation and populates it from the same data object
+//
+// NOTE -- TEST DATA ONLY:
+// We are testing from a student account and there is no
+// backend yet, so FACULTY_DIRECTORY_DATA below is prototype
+// data. Faculty status/availability is currently controlled
+// here. Once real faculty accounts exist, this array (and the
+// render/lookup functions that use it) should be replaced by
+// data fetched from those accounts -- the rest of the page
+// logic (search, filter, profile panel, animation) should not
+// need to change.
+// =========================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  // ---------------------------------------------------------
+  // TEST DATA -- replace with real faculty account data later
+  // ---------------------------------------------------------
+  // All faculty currently share one test office/room. Change this
+  // single constant when real office assignments exist per faculty.
+  const DEFAULT_OFFICE = "Room 305";
+
+  const FACULTY_DIRECTORY_DATA = [
+    {
+      id: "maria-nina-sales",
+      lastName: "Sales",
+      fullName: "Engr. Maria Nina Sales",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "available",
+      statusLabel: "Available",
+      photo: "images/professor-maria-nina-sales.jpg",
+      hours: [
+        { day: "Monday", time: "9:00 AM - 11:00 AM" },
+        { day: "Tuesday", time: "1:00 PM - 3:00 PM" },
+        { day: "Wednesday", time: "9:00 AM - 11:00 AM" },
+        { day: "Thursday", time: "1:00 PM - 3:00 PM" },
+        { day: "Friday", time: "10:00 AM - 12:00 PM" },
+      ],
+    },
+    {
+      id: "bernard-bisuecos",
+      lastName: "Bisuecos",
+      fullName: "Engr. Bernard Bisuecos",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "onleave",
+      statusLabel: "On Leave",
+      photo: "images/professor-bernard-bisuecos.jpg",
+      hours: [
+        { day: "Monday", time: "Unavailable" },
+        { day: "Tuesday", time: "Unavailable" },
+        { day: "Wednesday", time: "10:00 AM - 12:00 PM" },
+        { day: "Thursday", time: "Unavailable" },
+        { day: "Friday", time: "Unavailable" },
+      ],
+    },
+    {
+      id: "mervin-molina",
+      lastName: "Molina",
+      fullName: "Engr. Mervin Molina",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "teaching",
+      statusLabel: "Teaching Class",
+      photo: "images/professor-mervin-molina.jpg",
+      hours: [
+        { day: "Monday", time: "2:00 PM - 4:00 PM" },
+        { day: "Tuesday", time: "9:00 AM - 10:00 AM" },
+        { day: "Wednesday", time: "2:00 PM - 4:00 PM" },
+        { day: "Thursday", time: "9:00 AM - 10:00 AM" },
+        { day: "Friday", time: "1:00 PM - 2:00 PM" },
+      ],
+    },
+    {
+      id: "rose-onate",
+      lastName: "Onate",
+      fullName: "Engr. Rose Onate",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "meeting",
+      statusLabel: "Meeting",
+      photo: "images/professor-rose-onate.jpg",
+      hours: [
+        { day: "Monday", time: "10:00 AM - 12:00 PM" },
+        { day: "Tuesday", time: "10:00 AM - 12:00 PM" },
+        { day: "Wednesday", time: "1:00 PM - 3:00 PM" },
+        { day: "Thursday", time: "10:00 AM - 12:00 PM" },
+        { day: "Friday", time: "9:00 AM - 11:00 AM" },
+      ],
+    },
+    {
+      id: "melody-paned",
+      lastName: "Paned",
+      fullName: "Engr. Melody Paned",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "offline",
+      statusLabel: "Offline",
+      photo: "images/professor-melody-paned.jpg",
+      hours: [
+        { day: "Monday", time: "9:00 AM - 11:00 AM" },
+        { day: "Tuesday", time: "Unavailable" },
+        { day: "Wednesday", time: "9:00 AM - 11:00 AM" },
+        { day: "Thursday", time: "Unavailable" },
+        { day: "Friday", time: "9:00 AM - 11:00 AM" },
+      ],
+    },
+  ];
+
+  const STATUS_DOT_CLASS = {
+    available: "status-available",
+    teaching: "status-teaching",
+    meeting: "status-meeting",
+    consultation: "status-consultation",
+    onleave: "status-onleave",
+    offline: "status-offline",
+  };
+
+  // ---------------------------------------------------------
+  // Element references
+  // ---------------------------------------------------------
+  const facultyListEl = document.getElementById("facultyList");
+  const noResultsMessage = document.getElementById("noResultsMessage");
+  const searchInput = document.getElementById("facultySearchInput");
+  const directoryContainer = document.getElementById("directoryContainer");
+  const profilePanel = document.getElementById("directoryProfilePanel");
+
+  let selectedFacultyId = null;
+
+  // ---------------------------------------------------------
+  // Render the faculty list from FACULTY_DIRECTORY_DATA
+  // ---------------------------------------------------------
+  function renderFacultyList() {
+    facultyListEl.innerHTML = "";
+
+    FACULTY_DIRECTORY_DATA.forEach((faculty) => {
+      const card = document.createElement("article");
+      card.className = "faculty-card";
+      card.dataset.status = faculty.status;
+      card.dataset.facultyId = faculty.id;
+
+      const dotClass = STATUS_DOT_CLASS[faculty.status] || "status-offline";
+
+      card.innerHTML = `
+        <img src="${faculty.photo}" alt="${faculty.fullName}" class="faculty-photo">
+        <div class="faculty-info">
+          <p class="faculty-name">Engr. ${faculty.lastName}</p>
+          <p class="faculty-meta faculty-meta-row">
+            <span>${faculty.statusLabel}</span>
+            <span class="faculty-meta-dot" aria-hidden="true">&middot;</span>
+            <span>${faculty.program}</span>
+            <span class="faculty-meta-dot" aria-hidden="true">&middot;</span>
+            <span>${faculty.office}</span>
+          </p>
+        </div>
+        <span class="status-dot ${dotClass} faculty-status-dot" aria-hidden="true"></span>
+        <button type="button" class="view-profile-button" data-faculty-id="${faculty.id}">View Profile</button>
+      `;
+
+      facultyListEl.appendChild(card);
+    });
+
+    // Wire up "View Profile" buttons after render
+    Array.from(facultyListEl.querySelectorAll(".view-profile-button")).forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openProfile(button.dataset.facultyId);
+      });
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Search + status filter (status comes from student-shared.js)
+  // ---------------------------------------------------------
+  function applyFilters() {
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    const activeStatus = (window.StudentShared && window.StudentShared.activeStatus) || null;
+    const cards = Array.from(facultyListEl.querySelectorAll(".faculty-card"));
+    let visibleCount = 0;
+
+    cards.forEach((card) => {
+      const faculty = FACULTY_DIRECTORY_DATA.find((f) => f.id === card.dataset.facultyId);
+      const nameMatch = faculty.fullName.toLowerCase().includes(query);
+      const programMatch = faculty.program.toLowerCase().includes(query);
+      const matchesSearch = query === "" || nameMatch || programMatch;
+      const matchesStatus = !activeStatus || faculty.status === activeStatus;
+      const matches = matchesSearch && matchesStatus;
+
+      card.hidden = !matches;
+      if (matches) visibleCount += 1;
+    });
+
+    if (noResultsMessage) {
+      noResultsMessage.hidden = visibleCount > 0;
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", applyFilters);
+  }
+
+  // student-shared.js dispatches this when a status filter option is toggled
+  document.addEventListener("statusfilterchange", applyFilters);
+
+  // ---------------------------------------------------------
+  // Profile panel: builds the markup for the selected faculty,
+  // then animates the layout into the split (list-left,
+  // profile-right) view.
+  // ---------------------------------------------------------
+  function buildProfileMarkup(faculty) {
+    const dotClass = STATUS_DOT_CLASS[faculty.status] || "status-offline";
+
+    const hoursRows = faculty.hours.map((entry) => `
+      <li class="profile-hours-row">
+        <span class="profile-hours-day">${entry.day}</span>
+        <span class="profile-hours-time">${entry.time}</span>
+      </li>
+    `).join("");
+
+    return `
+      <img src="${faculty.photo}" alt="${faculty.fullName}" class="profile-photo">
+      <p class="profile-name">${faculty.fullName}</p>
+      <p class="profile-status-row">
+        <span class="status-dot ${dotClass}" aria-hidden="true"></span>
+        <span class="profile-status-label">${faculty.statusLabel}</span>
+      </p>
+      <p class="profile-program">${faculty.program}</p>
+      <p class="profile-office">${faculty.office}</p>
+
+      <h2 class="profile-section-title">Available Hours</h2>
+      <ul class="profile-hours-list">
+        ${hoursRows}
+      </ul>
+
+      <a
+        href="request-consultation.html?facultyId=${encodeURIComponent(faculty.id)}"
+        class="request-consultation-button"
+      >
+        Request Consultation
+      </a>
+    `;
+  }
+
+  function openProfile(facultyId) {
+    const faculty = FACULTY_DIRECTORY_DATA.find((f) => f.id === facultyId);
+    if (!faculty) return;
+
+    selectedFacultyId = facultyId;
+
+    // Highlight the selected card
+    Array.from(facultyListEl.querySelectorAll(".faculty-card")).forEach((card) => {
+      card.classList.toggle("is-selected", card.dataset.facultyId === facultyId);
+    });
+
+    profilePanel.innerHTML = buildProfileMarkup(faculty);
+    profilePanel.hidden = false;
+    directoryContainer.classList.add("is-split");
+
+    // Let the browser paint `hidden` removal first so the
+    // opacity/transform transition actually animates in
+    requestAnimationFrame(() => profilePanel.classList.add("is-visible"));
+  }
+
+  // ---------------------------------------------------------
+  // Initial render
+  // ---------------------------------------------------------
+  renderFacultyList();
+  applyFilters();
+
+});
+
+  </script>
 </body>
 </html>

@@ -6,13 +6,24 @@
 // - View More expands a card in place to show Program, Year
 //   and Set, and Additional Message; clicking outside any
 //   expanded card collapses it back.
-// - Accept / Decline mark the request answered, notify through
-//   the existing Faculty Notifications system (persisted to
-//   localStorage so it actually shows up when the faculty
-//   later visits that page), simulate a notification landing
-//   on the student's side, then remove the request from the
-//   pending queue so the next one moves up.
+// - Accept / Decline mark the request answered, then remove it
+//   from the pending queue so the next one moves up.
 // - Reschedule is a frontend-only placeholder for now.
+//
+// IMPORTANT -- FACULTY TEST ACCOUNT, MOCK DATA ONLY:
+// REQUESTS lives entirely in memory (a plain JS variable), with
+// no localStorage/sessionStorage/cookies/backend of any kind.
+// A full page reload re-runs this script from scratch, which is
+// exactly what resets the mock requests back to their original
+// pending state -- any Accept/Decline from a previous visit is
+// intentionally NOT remembered. This is deliberate: the Faculty
+// Dashboard's Pending Consultation Requests card follows this
+// same in-memory, resets-on-reload pattern (see faculty-dashboard.js)
+// so both pages behave identically, even though neither page's
+// actions carry over to the other -- once a real backend exists,
+// both pages will instead fetch the same real, persisted request
+// state, and the accept/decline/view-more actions themselves
+// stay exactly the same.
 //
 // Frontend/prototype only -- there is no backend yet. Shared
 // shell behavior (navbar, sidebar, quick action, notification
@@ -22,11 +33,15 @@
 // ---------------------------------------------------------
 // Mock pending requests -- replace with real data from the
 // backend once consultation requests are persisted server-side.
+// Re-initialized fresh every time this script runs (i.e. every
+// page load/reload), which is what gives the reset-on-reload
+// behavior -- no storage read/write involved.
 // ---------------------------------------------------------
 let REQUESTS = [
   {
     id: "req-1",
     name: "Juan Dela Cruz",
+    studentId: "22-00145",
     type: "Research Proposal",
     date: "July 20, 10:00 AM",
     program: "BS Computer Engineering",
@@ -37,6 +52,7 @@ let REQUESTS = [
   {
     id: "req-2",
     name: "Joselita Rizal",
+    studentId: "22-00098",
     type: "Research Proposal",
     date: "July 20, 10:00 AM",
     program: "BS Computer Engineering",
@@ -47,6 +63,7 @@ let REQUESTS = [
   {
     id: "req-3",
     name: "Mark Santos",
+    studentId: "21-00567",
     type: "Thesis Defense Prep",
     date: "July 21, 1:00 PM",
     program: "BS Computer Engineering",
@@ -57,6 +74,7 @@ let REQUESTS = [
   {
     id: "req-4",
     name: "Angela Cruz",
+    studentId: "23-00212",
     type: "Grade Concern",
     date: "July 22, 9:30 AM",
     program: "BS Computer Engineering",
@@ -67,50 +85,15 @@ let REQUESTS = [
 ];
 
 // ---------------------------------------------------------
-// Notification integration -- writes into the same storage
-// shape/key that faculty-notifications.js reads, so this is
-// genuinely the existing notification system, not a separate
-// one. Also writes a simulated entry to the student-side store;
-// actually displaying that requires the Student Dashboard/
-// Notifications pages to read from it, which is outside this
-// page's scope.
+// Notification hook -- intentionally a no-op placeholder for
+// now. The backend team owns building out the real notification
+// system; this just marks where Accept/Decline would trigger it
+// once that exists. No localStorage or any other persistence.
 // ---------------------------------------------------------
-const FACULTY_NOTIFICATIONS_STORAGE_KEY = "profconsult_faculty_notifications";
-const STUDENT_NOTIFICATIONS_STORAGE_KEY = "profconsult_student_notifications";
-
-function pushNotification(storageKey, notification) {
-  let list = [];
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    list = raw ? JSON.parse(raw) : [];
-  } catch (error) {
-    list = [];
-  }
-  list.unshift(notification);
-  try {
-    window.localStorage.setItem(storageKey, JSON.stringify(list));
-  } catch (error) {
-    // Storage unavailable (e.g. private browsing) -- the action
-    // itself still completes, it just won't persist a notification.
-  }
-}
-
-function notifyFacultyRequestAnswered(request, decision) {
-  const verb = decision === "accepted" ? "accepted" : "declined";
-  pushNotification(FACULTY_NOTIFICATIONS_STORAGE_KEY, {
-    id: `notif-${request.id}-${decision}-${Date.now()}`,
-    type: `consultation-${decision}`,
-    message: `You ${verb} ${request.name}'s consultation request.`,
-  });
-}
-
-function notifyStudentRequestAnswered(request, decision) {
-  const verb = decision === "accepted" ? "approved" : "declined";
-  pushNotification(STUDENT_NOTIFICATIONS_STORAGE_KEY, {
-    id: `notif-${request.id}-${decision}-${Date.now()}`,
-    type: `consultation-${decision}`,
-    message: `Your consultation request (${request.type}) was ${verb}.`,
-  });
+function notifyRequestAnswered(request, decision) {
+  // Placeholder only -- wire this to the real notification
+  // system once the backend exists. Intentionally does nothing
+  // and stores nothing for now.
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -228,8 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewMoreButton) viewMoreButton.disabled = true;
 
         request.status = "accepted";
-        notifyFacultyRequestAnswered(request, "accepted");
-        notifyStudentRequestAnswered(request, "accepted");
+        notifyRequestAnswered(request, "accepted");
 
         // Give the person a moment to see "Accepted" before the
         // card leaves the pending queue and the next one shifts up.
@@ -246,8 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewMoreButton) viewMoreButton.disabled = true;
 
         request.status = "declined";
-        notifyFacultyRequestAnswered(request, "declined");
-        notifyStudentRequestAnswered(request, "declined");
+        notifyRequestAnswered(request, "declined");
 
         window.setTimeout(renderRequests, 900);
       }

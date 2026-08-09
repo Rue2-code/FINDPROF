@@ -1,206 +1,278 @@
 // =========================================================
-// SHARED FACULTY DATA LAYER (frontend-only stand-in)
-// =========================================================
-// This is the single source of truth for faculty accounts and
-// their live status until a real backend exists. It's built on
-// localStorage specifically (not sessionStorage) because
-// localStorage is shared across all tabs/pages for the same
-// site, which is what lets a status change made on the future
-// Faculty Dashboard show up immediately on the Student
-// Dashboard and Faculty Directory in another tab.
+// FACULTY-DIRECTORY.JS
+// Page-specific behavior for the Faculty Directory:
+// - Renders faculty cards from FACULTY_DIRECTORY_DATA
+// - Search-as-you-type by name or specialization/program
+// - Combines with the shared status filter (student-shared.js)
+// - "View Profile" opens the split-view profile panel with an
+//   animation and populates it from the same data object
 //
-// Everything other files need is explicitly attached to
-// `window` below, instead of relying on plain top-level
-// const/function declarations being implicitly shared across
-// separate <script> files. Both approaches are valid per spec,
-// but explicit `window.x = ...` is the more robust, unambiguous
-// choice for cross-file access.
-//
-// HOW TO REPLACE WITH A REAL BACKEND LATER:
-// Swap the body of each function below for the matching API
-// call (e.g. getFacultyList -> GET /api/faculty). Every page
-// that uses this file only calls these functions, never
-// localStorage directly, so the swap is isolated to this file.
+// NOTE -- TEST DATA ONLY:
+// We are testing from a student account and there is no
+// backend yet, so FACULTY_DIRECTORY_DATA below is prototype
+// data. Faculty status/availability is currently controlled
+// here. Once real faculty accounts exist, this array (and the
+// render/lookup functions that use it) should be replaced by
+// data fetched from those accounts -- the rest of the page
+// logic (search, filter, profile panel, animation) should not
+// need to change.
 // =========================================================
 
-var FACULTY_STORAGE_KEY = "profconsult_faculty_directory";
+document.addEventListener("DOMContentLoaded", () => {
 
-// Supported statuses. "onleave" is an extra status beyond the
-// four in the spec (Available/Teaching Class/Meeting/Offline),
-// kept for consistency with the Student Dashboard sample data.
-window.FACULTY_STATUS_LABELS = {
-  available: "Available",
-  teaching: "Teaching Class",
-  meeting: "Meeting",
-  offline: "Offline",
-  onleave: "On Leave",
-};
+  // ---------------------------------------------------------
+  // TEST DATA -- replace with real faculty account data later
+  // ---------------------------------------------------------
+  // All faculty currently share one test office/room. Change this
+  // single constant when real office assignments exist per faculty.
+  const DEFAULT_OFFICE = "Room 305";
 
-window.FACULTY_STATUS_COLOR_CLASS = {
-  available: "status-available",
-  teaching: "status-teaching",
-  meeting: "status-meeting",
-  offline: "status-offline",
-  onleave: "status-onleave",
-};
+  const FACULTY_DIRECTORY_DATA = [
+    {
+      id: "maria-nina-sales",
+      lastName: "Sales",
+      fullName: "Engr. Maria Nina Sales",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "available",
+      statusLabel: "Available",
+      photo: "images/professor-maria-nina-sales.jpg",
+      hours: [
+        { day: "Monday", time: "9:00 AM - 11:00 AM" },
+        { day: "Tuesday", time: "1:00 PM - 3:00 PM" },
+        { day: "Wednesday", time: "9:00 AM - 11:00 AM" },
+        { day: "Thursday", time: "1:00 PM - 3:00 PM" },
+        { day: "Friday", time: "10:00 AM - 12:00 PM" },
+      ],
+    },
+    {
+      id: "bernard-bisuecos",
+      lastName: "Bisuecos",
+      fullName: "Engr. Bernard Bisuecos",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "onleave",
+      statusLabel: "On Leave",
+      photo: "images/professor-bernard-bisuecos.jpg",
+      hours: [
+        { day: "Monday", time: "Unavailable" },
+        { day: "Tuesday", time: "Unavailable" },
+        { day: "Wednesday", time: "10:00 AM - 12:00 PM" },
+        { day: "Thursday", time: "Unavailable" },
+        { day: "Friday", time: "Unavailable" },
+      ],
+    },
+    {
+      id: "mervin-molina",
+      lastName: "Molina",
+      fullName: "Engr. Mervin Molina",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "teaching",
+      statusLabel: "Teaching Class",
+      photo: "images/professor-mervin-molina.jpg",
+      hours: [
+        { day: "Monday", time: "2:00 PM - 4:00 PM" },
+        { day: "Tuesday", time: "9:00 AM - 10:00 AM" },
+        { day: "Wednesday", time: "2:00 PM - 4:00 PM" },
+        { day: "Thursday", time: "9:00 AM - 10:00 AM" },
+        { day: "Friday", time: "1:00 PM - 2:00 PM" },
+      ],
+    },
+    {
+      id: "rose-onate",
+      lastName: "Onate",
+      fullName: "Engr. Rose Onate",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "meeting",
+      statusLabel: "Meeting",
+      photo: "images/professor-rose-onate.jpg",
+      hours: [
+        { day: "Monday", time: "10:00 AM - 12:00 PM" },
+        { day: "Tuesday", time: "10:00 AM - 12:00 PM" },
+        { day: "Wednesday", time: "1:00 PM - 3:00 PM" },
+        { day: "Thursday", time: "10:00 AM - 12:00 PM" },
+        { day: "Friday", time: "9:00 AM - 11:00 AM" },
+      ],
+    },
+    {
+      id: "melody-paned",
+      lastName: "Paned",
+      fullName: "Engr. Melody Paned",
+      program: "Computer Engineering",
+      office: DEFAULT_OFFICE,
+      status: "offline",
+      statusLabel: "Offline",
+      photo: "images/professor-melody-paned.jpg",
+      hours: [
+        { day: "Monday", time: "9:00 AM - 11:00 AM" },
+        { day: "Tuesday", time: "Unavailable" },
+        { day: "Wednesday", time: "9:00 AM - 11:00 AM" },
+        { day: "Thursday", time: "Unavailable" },
+        { day: "Friday", time: "9:00 AM - 11:00 AM" },
+      ],
+    },
+  ];
 
-// Seed data -- only used the very first time the site runs
-// (i.e. when localStorage has nothing yet). Once real faculty
-// accounts are created, this seed data lives alongside them.
-var FACULTY_SEED_DATA = [
-  {
-    id: "maria-nina-sales",
-    fullName: "Engr. Maria Nina Sales",
-    lastName: "Sales",
-    status: "available",
-    department: "Computer Engineering",
-    officeRoom: "301",
-    photo: "images/professor-maria-nina-sales.jpg",
-  },
-  {
-    id: "bernard-bisuecos",
-    fullName: "Engr. Bernard Bisuecos",
-    lastName: "Bisuecos",
-    status: "onleave",
-    department: "Computer Engineering",
-    officeRoom: "305",
-    photo: "images/professor-bernard-bisuecos.jpg",
-  },
-  {
-    id: "mervin-molina",
-    fullName: "Engr. Mervin Molina",
-    lastName: "Molina",
-    status: "teaching",
-    department: "Computer Engineering",
-    officeRoom: "212",
-    photo: "images/professor-mervin-molina.jpg",
-  },
-  {
-    id: "rose-onate",
-    fullName: "Engr. Rose Onate",
-    lastName: "Onate",
-    status: "meeting",
-    department: "Computer Engineering",
-    officeRoom: "118",
-    photo: "images/professor-rose-onate.jpg",
-  },
-  {
-    id: "melody-paned",
-    fullName: "Engr. Melody Paned",
-    lastName: "Paned",
-    status: "offline",
-    department: "Computer Engineering",
-    officeRoom: "204",
-    photo: "images/professor-melody-paned.jpg",
-  },
-];
+  const STATUS_DOT_CLASS = {
+    available: "status-available",
+    teaching: "status-teaching",
+    meeting: "status-meeting",
+    consultation: "status-consultation",
+    onleave: "status-onleave",
+    offline: "status-offline",
+  };
 
-/**
- * Returns the current faculty list, seeding localStorage with
- * FACULTY_SEED_DATA the very first time this runs.
- */
-window.getFacultyList = function getFacultyList() {
-  var raw = localStorage.getItem(FACULTY_STORAGE_KEY);
-  if (!raw) {
-    localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(FACULTY_SEED_DATA));
-    return FACULTY_SEED_DATA.slice();
+  // ---------------------------------------------------------
+  // Element references
+  // ---------------------------------------------------------
+  const facultyListEl = document.getElementById("facultyList");
+  const noResultsMessage = document.getElementById("noResultsMessage");
+  const searchInput = document.getElementById("facultySearchInput");
+  const directoryContainer = document.getElementById("directoryContainer");
+  const profilePanel = document.getElementById("directoryProfilePanel");
+
+  let selectedFacultyId = null;
+
+  // ---------------------------------------------------------
+  // Render the faculty list from FACULTY_DIRECTORY_DATA
+  // ---------------------------------------------------------
+  function renderFacultyList() {
+    facultyListEl.innerHTML = "";
+
+    FACULTY_DIRECTORY_DATA.forEach((faculty) => {
+      const card = document.createElement("article");
+      card.className = "faculty-card";
+      card.dataset.status = faculty.status;
+      card.dataset.facultyId = faculty.id;
+
+      const dotClass = STATUS_DOT_CLASS[faculty.status] || "status-offline";
+
+      card.innerHTML = `
+        <img src="${faculty.photo}" alt="${faculty.fullName}" class="faculty-photo">
+        <div class="faculty-info">
+          <p class="faculty-name">Engr. ${faculty.lastName}</p>
+          <p class="faculty-meta faculty-meta-row">
+            <span>${faculty.statusLabel}</span>
+            <span class="faculty-meta-dot" aria-hidden="true">&middot;</span>
+            <span>${faculty.program}</span>
+            <span class="faculty-meta-dot" aria-hidden="true">&middot;</span>
+            <span>${faculty.office}</span>
+          </p>
+        </div>
+        <span class="status-dot ${dotClass} faculty-status-dot" aria-hidden="true"></span>
+        <button type="button" class="view-profile-button" data-faculty-id="${faculty.id}">View Profile</button>
+      `;
+
+      facultyListEl.appendChild(card);
+    });
+
+    // Wire up "View Profile" buttons after render
+    Array.from(facultyListEl.querySelectorAll(".view-profile-button")).forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openProfile(button.dataset.facultyId);
+      });
+    });
   }
-  try {
-    return JSON.parse(raw);
-  } catch (error) {
-    console.error("Faculty data was corrupted, reseeding.", error);
-    localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(FACULTY_SEED_DATA));
-    return FACULTY_SEED_DATA.slice();
-  }
-};
 
-function saveFacultyList(list) {
-  localStorage.setItem(FACULTY_STORAGE_KEY, JSON.stringify(list));
-  // Let other listeners on the SAME tab know immediately --
-  // the native "storage" event only fires for OTHER tabs.
-  window.dispatchEvent(new CustomEvent("profconsult:faculty-updated"));
-}
+  // ---------------------------------------------------------
+  // Search + status filter (status comes from student-shared.js)
+  // ---------------------------------------------------------
+  function applyFilters() {
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    const activeStatus = (window.StudentShared && window.StudentShared.activeStatus) || null;
+    const cards = Array.from(facultyListEl.querySelectorAll(".faculty-card"));
+    let visibleCount = 0;
 
-/**
- * Returns a single faculty member by id, or null if not found.
- */
-window.getFacultyById = function getFacultyById(facultyId) {
-  var list = window.getFacultyList();
-  for (var i = 0; i < list.length; i++) {
-    if (list[i].id === facultyId) return list[i];
-  }
-  return null;
-};
+    cards.forEach((card) => {
+      const faculty = FACULTY_DIRECTORY_DATA.find((f) => f.id === card.dataset.facultyId);
+      const nameMatch = faculty.fullName.toLowerCase().includes(query);
+      const programMatch = faculty.program.toLowerCase().includes(query);
+      const matchesSearch = query === "" || nameMatch || programMatch;
+      const matchesStatus = !activeStatus || faculty.status === activeStatus;
+      const matches = matchesSearch && matchesStatus;
 
-/**
- * Adds a newly created faculty account so it automatically
- * appears in the Faculty Directory. Called from
- * create-faculty-account2.js once account creation succeeds.
- */
-window.addFacultyAccount = function addFacultyAccount(record) {
-  var list = window.getFacultyList();
+      card.hidden = !matches;
+      if (matches) visibleCount += 1;
+    });
 
-  var id =
-    record.id ||
-    record.fullName
-      .toLowerCase()
-      .replace(/^engr\.\s*/, "")
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-");
-
-  list.push({
-    id: id,
-    fullName: record.fullName,
-    lastName: record.lastName,
-    status: record.status || "offline",
-    department: record.department || "Computer Engineering",
-    officeRoom: record.officeRoom || "TBA",
-    photo: record.photo || "images/professor-default.jpg",
-  });
-
-  saveFacultyList(list);
-  return id;
-};
-
-/**
- * Updates a single faculty member's status. This is the
- * function the future Faculty Dashboard will call when a
- * professor changes their availability -- every page reading
- * via getFacultyList()/subscribeFacultyUpdates() picks up the
- * change automatically.
- */
-window.updateFacultyStatus = function updateFacultyStatus(facultyId, newStatus) {
-  var list = window.getFacultyList();
-  var record = null;
-  for (var i = 0; i < list.length; i++) {
-    if (list[i].id === facultyId) {
-      record = list[i];
-      break;
+    if (noResultsMessage) {
+      noResultsMessage.hidden = visibleCount > 0;
     }
   }
-  if (!record) return;
-  record.status = newStatus;
-  saveFacultyList(list);
-};
 
-/**
- * Subscribes a callback to faculty data changes, whether they
- * happen on this tab (custom event) or another tab/page
- * (native "storage" event). Returns an unsubscribe function.
- */
-window.subscribeFacultyUpdates = function subscribeFacultyUpdates(callback) {
-  function handleStorageEvent(event) {
-    if (event.key === FACULTY_STORAGE_KEY) callback();
-  }
-  function handleLocalEvent() {
-    callback();
+  if (searchInput) {
+    searchInput.addEventListener("input", applyFilters);
   }
 
-  window.addEventListener("storage", handleStorageEvent);
-  window.addEventListener("profconsult:faculty-updated", handleLocalEvent);
+  // student-shared.js dispatches this when a status filter option is toggled
+  document.addEventListener("statusfilterchange", applyFilters);
 
-  return function unsubscribe() {
-    window.removeEventListener("storage", handleStorageEvent);
-    window.removeEventListener("profconsult:faculty-updated", handleLocalEvent);
-  };
-};
+  // ---------------------------------------------------------
+  // Profile panel: builds the markup for the selected faculty,
+  // then animates the layout into the split (list-left,
+  // profile-right) view.
+  // ---------------------------------------------------------
+  function buildProfileMarkup(faculty) {
+    const dotClass = STATUS_DOT_CLASS[faculty.status] || "status-offline";
+
+    const hoursRows = faculty.hours.map((entry) => `
+      <li class="profile-hours-row">
+        <span class="profile-hours-day">${entry.day}</span>
+        <span class="profile-hours-time">${entry.time}</span>
+      </li>
+    `).join("");
+
+    return `
+      <img src="${faculty.photo}" alt="${faculty.fullName}" class="profile-photo">
+      <p class="profile-name">${faculty.fullName}</p>
+      <p class="profile-status-row">
+        <span class="status-dot ${dotClass}" aria-hidden="true"></span>
+        <span class="profile-status-label">${faculty.statusLabel}</span>
+      </p>
+      <p class="profile-program">${faculty.program}</p>
+      <p class="profile-office">${faculty.office}</p>
+
+      <h2 class="profile-section-title">Available Hours</h2>
+      <ul class="profile-hours-list">
+        ${hoursRows}
+      </ul>
+
+      <a
+        href="request-consultation.html?facultyId=${encodeURIComponent(faculty.id)}"
+        class="request-consultation-button"
+      >
+        Request Consultation
+      </a>
+    `;
+  }
+
+  function openProfile(facultyId) {
+    const faculty = FACULTY_DIRECTORY_DATA.find((f) => f.id === facultyId);
+    if (!faculty) return;
+
+    selectedFacultyId = facultyId;
+
+    // Highlight the selected card
+    Array.from(facultyListEl.querySelectorAll(".faculty-card")).forEach((card) => {
+      card.classList.toggle("is-selected", card.dataset.facultyId === facultyId);
+    });
+
+    profilePanel.innerHTML = buildProfileMarkup(faculty);
+    profilePanel.hidden = false;
+    directoryContainer.classList.add("is-split");
+
+    // Let the browser paint `hidden` removal first so the
+    // opacity/transform transition actually animates in
+    requestAnimationFrame(() => profilePanel.classList.add("is-visible"));
+  }
+
+  // ---------------------------------------------------------
+  // Initial render
+  // ---------------------------------------------------------
+  renderFacultyList();
+  applyFilters();
+
+});

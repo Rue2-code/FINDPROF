@@ -1,8 +1,9 @@
 // =========================================================
 // FACULTY SHARED LAYOUT INTERACTIONS
 // Reused across every Faculty page. Handles only the shared
-// shell: burger sidebar, Quick Action popup, notification
-// bell placeholder, and active-link highlighting.
+// shell: burger sidebar, Quick Action popup (including Check
+// In/Check Out online status), notification bell navigation,
+// and active-link highlighting.
 //
 // Each Faculty page sets `document.body.dataset.activePage`
 // to one of: "dashboard", "consultation-requests",
@@ -10,10 +11,27 @@
 // so the correct sidebar link gets the .is-active class
 // automatically, without hardcoding it per page.
 //
-// Page-specific behavior (e.g. the Dashboard's status
-// dropdown) belongs in that page's own JS file, loaded
-// after this one.
+// Page-specific behavior (e.g. the Dashboard's Change Status
+// dropdown) belongs in that page's own JS file, loaded after
+// this one.
 // =========================================================
+
+// ---------------------------------------------------------
+// Faculty online/offline status (Quick Action Check In/Out)
+// -- FACULTY TEST ACCOUNT, frontend mock state only. No
+// backend, no localStorage/sessionStorage: a plain in-memory
+// variable that always starts OFFLINE on every page load,
+// per the test-account requirement that nothing here persists.
+//
+// CHECK_IN_TIMEOUT is the single place that controls how long
+// a Check In lasts before automatically reverting to Offline
+// if the faculty forgets to Check Out -- change this one value
+// to adjust the duration everywhere it's used.
+// ---------------------------------------------------------
+const CHECK_IN_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
+let facultyOnlineStatus = "offline"; // "offline" | "available"
+let checkInTimeoutId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -68,8 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------------------------------------------------------
   // Quick Action popup: fades/slides in below its trigger icon.
-  // Check In / Check Out are placeholders -- clickable, no
-  // functionality implemented yet.
   // ---------------------------------------------------------
   const quickActionButton = document.getElementById("facultyQuickActionButton");
   const quickActionPanel = document.getElementById("facultyQuickActionPanel");
@@ -112,25 +128,136 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // ---------------------------------------------------------
+  // Check In / Check Out -- toggles facultyOnlineStatus between
+  // "offline" and "available". The popup's status line is not
+  // part of the existing static markup, so it's created here at
+  // runtime (inline-styled, so it renders consistently even on
+  // pages whose own CSS doesn't define status-dot colors) and
+  // inserted right after the popup header, before the buttons.
+  // Only one of Check In / Check Out is visible at a time.
+  // ---------------------------------------------------------
   const checkInButton = document.getElementById("facultyCheckInButton");
   const checkOutButton = document.getElementById("facultyCheckOutButton");
-  [checkInButton, checkOutButton].forEach((button) => {
-    if (button) {
-      button.addEventListener("click", (event) => {
-        event.preventDefault();
-        // Intentionally left empty -- functionality comes later
-      });
+  const quickActionHeader = quickActionPanel
+    ? quickActionPanel.querySelector(".faculty-quick-action-header")
+    : null;
+
+  let quickActionStatusDot = null;
+  let quickActionStatusLabel = null;
+
+  if (quickActionPanel && quickActionHeader && !quickActionPanel.querySelector(".faculty-quick-action-status")) {
+    const statusRow = document.createElement("p");
+    statusRow.className = "faculty-quick-action-status";
+    statusRow.style.cssText = "display:flex;align-items:center;gap:8px;font-size:0.82rem;font-weight:600;color:#2b2b2b;margin:0 0 14px;";
+
+    quickActionStatusDot = document.createElement("span");
+    quickActionStatusDot.setAttribute("aria-hidden", "true");
+    quickActionStatusDot.style.cssText = "display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;";
+
+    quickActionStatusLabel = document.createElement("span");
+
+    statusRow.appendChild(document.createTextNode("Status: "));
+    statusRow.appendChild(quickActionStatusDot);
+    statusRow.appendChild(quickActionStatusLabel);
+
+    quickActionHeader.insertAdjacentElement("afterend", statusRow);
+  } else if (quickActionPanel) {
+    // Popup already has a status row (shouldn't normally happen,
+    // but guards against double-injection if this ever runs twice).
+    const existingRow = quickActionPanel.querySelector(".faculty-quick-action-status");
+    if (existingRow) {
+      quickActionStatusDot = existingRow.children[0] || null;
+      quickActionStatusLabel = existingRow.children[1] || null;
     }
-  });
+  }
+
+  function updateQuickActionUI() {
+    const isAvailable = facultyOnlineStatus === "available";
+
+    if (quickActionStatusDot) {
+      quickActionStatusDot.style.backgroundColor = isAvailable ? "#2fae4e" : "#b9b9b9";
+    }
+    if (quickActionStatusLabel) {
+      quickActionStatusLabel.textContent = isAvailable ? "Available" : "Offline";
+    }
+    if (checkInButton) {
+      checkInButton.hidden = isAvailable;
+    }
+    if (checkOutButton) {
+      checkOutButton.hidden = !isAvailable;
+    }
+  }
+
+  // Reflects the Quick Action status onto the Faculty Dashboard's
+  // "Today's Status" card, if this page has one (only the
+  // Dashboard does -- this is a no-op everywhere else). Uses the
+  // same status-dot/status-available/status-offline classes the
+  // Dashboard's own Change Status dropdown already uses, so the
+  // two stay visually consistent.
+  function updateDashboardStatusUI() {
+    const dashboardStatusDot = document.getElementById("currentStatusDot");
+    const dashboardStatusLabel = document.getElementById("currentStatusLabel");
+    if (!dashboardStatusDot || !dashboardStatusLabel) return;
+
+    const isAvailable = facultyOnlineStatus === "available";
+    dashboardStatusDot.className = `status-dot status-${isAvailable ? "available" : "offline"}`;
+    dashboardStatusLabel.textContent = isAvailable ? "Available" : "Offline";
+  }
+
+  function setFacultyOnlineStatus(newStatus) {
+    facultyOnlineStatus = newStatus;
+    updateQuickActionUI();
+    updateDashboardStatusUI();
+  }
+
+  function handleCheckIn(event) {
+    event.preventDefault();
+    setFacultyOnlineStatus("available");
+
+    if (checkInTimeoutId) {
+      window.clearTimeout(checkInTimeoutId);
+    }
+    // Forgot-to-Check-Out safeguard: automatically revert to
+    // Offline after CHECK_IN_TIMEOUT if Check Out was never
+    // clicked. Frontend-only simulation of what a real session
+    // timeout will eventually do once there's a backend.
+    checkInTimeoutId = window.setTimeout(() => {
+      setFacultyOnlineStatus("offline");
+      checkInTimeoutId = null;
+    }, CHECK_IN_TIMEOUT);
+  }
+
+  function handleCheckOut(event) {
+    event.preventDefault();
+    setFacultyOnlineStatus("offline");
+
+    if (checkInTimeoutId) {
+      window.clearTimeout(checkInTimeoutId);
+      checkInTimeoutId = null;
+    }
+  }
+
+  if (checkInButton) {
+    checkInButton.addEventListener("click", handleCheckIn);
+  }
+  if (checkOutButton) {
+    checkOutButton.addEventListener("click", handleCheckOut);
+  }
+
+  // Establish the initial OFFLINE state (status line text/color,
+  // correct button visible, Today's Status synced if present).
+  updateQuickActionUI();
+  updateDashboardStatusUI();
 
   // ---------------------------------------------------------
-  // Notification bell -- clickable placeholder, no
-  // functionality implemented yet
+  // Notification bell -- navigates to the Faculty Notifications
+  // page. The bell icon/design itself is untouched.
   // ---------------------------------------------------------
   const notificationBellButton = document.getElementById("facultyNotificationBellButton");
   if (notificationBellButton) {
     notificationBellButton.addEventListener("click", () => {
-      // Intentionally left empty -- functionality comes later
+      window.location.href = "faculty-notifications.html";
     });
   }
 
