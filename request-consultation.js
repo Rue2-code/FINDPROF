@@ -19,7 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------------------------------------------------------
   const params = new URLSearchParams(window.location.search);
 
-  const SAMPLE_FACULTY_MEMBER = params.get("faculty") || "Engr. Maria Nina Sales";
+  const facultyId = params.get("facultyId");
+  const SAMPLE_FACULTY_MEMBER = params.get("faculty") || "Selected faculty member";
 
   const SAMPLE_STUDENT = {
     name: "John Dela Cruz",
@@ -211,13 +212,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------------------------------------------------------
   const form = document.getElementById("requestConsultationForm");
   if (form) {
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const requestId = `REQ-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+      if (!facultyId) {
+        alert("Please select a faculty member from the directory.");
+        return;
+      }
 
       const requestData = {
-        requestId,
         facultyMember: facultyMemberInput.textContent,
         studentName: studentNameInput.textContent,
         studentId: studentIdInput.textContent,
@@ -229,12 +232,21 @@ document.addEventListener("DOMContentLoaded", () => {
         status: "Pending Approval",
       };
 
-      // Future: POST requestData to the backend here instead of
-      // storing it locally -- sessionStorage is a frontend-only
-      // stand-in so request-submitted.html can display it
-      sessionStorage.setItem("profconsult_last_request", JSON.stringify(requestData));
+      try {
+        const response = await fetch("submit-consultation.php", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ faculty_id: facultyId, purpose: requestData.purpose, message: requestData.message, preferred_date: requestData.preferredDate, preferred_time: requestData.preferredTime })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Unable to submit request.");
+        requestData.requestId = `REQ-${result.id}`;
+        sessionStorage.setItem("profconsult_last_request", JSON.stringify(requestData));
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
 
-      // Also add this request to the persistent My Requests list
+      // Also keep the display list in sync for the static My Requests page.
       // so it automatically shows up on my-requests.html, growing
       // that list every time a request is submitted.
       try {

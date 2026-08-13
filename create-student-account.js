@@ -104,6 +104,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (form) {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (!form.checkValidity() || !document.getElementById("courseProgram").value || !document.getElementById("yearLevel").value) {
+        form.reportValidity();
+        return;
+      }
+      sessionStorage.setItem("findprof_registration", JSON.stringify({
+        role: "student",
+        id_number: studentNumberInput.value.trim(),
+        full_name: document.getElementById("fullName").value.trim(),
+        program: document.getElementById("courseProgram").value,
+        year_level: document.getElementById("yearLevel").value
+      }));
       window.location.href = "create-student-account2.html";
     });
   }

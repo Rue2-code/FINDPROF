@@ -104,6 +104,16 @@ document.addEventListener("DOMContentLoaded", () => {
   if (form) {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (!form.checkValidity() || !document.getElementById("department").value) {
+        form.reportValidity();
+        return;
+      }
+      sessionStorage.setItem("findprof_registration", JSON.stringify({
+        role: "faculty",
+        id_number: document.getElementById("facultyIdNumber").value.trim(),
+        full_name: document.getElementById("fullName").value.trim(),
+        department: document.getElementById("department").value
+      }));
       window.location.href = "create-faculty-account2.html";
     });
   }

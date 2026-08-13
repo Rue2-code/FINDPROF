@@ -1,0 +1,89 @@
+erDiagram
+    USERS {
+        INT_UNSIGNED id PK
+        ENUM_role role "student | faculty"
+        VARCHAR_30 id_number UK
+        VARCHAR_150 full_name
+        VARCHAR_190 email UK
+        VARCHAR_20 phone
+        VARCHAR_255 password_hash
+        VARCHAR_120 program "nullable"
+        TINYINT_UNSIGNED year_level "nullable"
+        VARCHAR_120 department "nullable"
+        ENUM_current_status current_status "available | offline; optional faculty presence override"
+        TIMESTAMP created_at
+    }
+
+    CONSULTATIONS {
+        INT_UNSIGNED id PK
+        INT_UNSIGNED student_id FK
+        INT_UNSIGNED faculty_id FK
+        VARCHAR_255 purpose
+        TEXT message "nullable"
+        DATE preferred_date
+        TIME preferred_start_time
+        TIME preferred_end_time "nullable"
+        DATETIME scheduled_start_at "nullable"
+        DATETIME scheduled_end_at "nullable"
+        ENUM_status status "pending | accepted | declined | rescheduled | completed | cancelled"
+        TEXT faculty_response "nullable"
+        TIMESTAMP created_at
+    }
+
+    FACULTY_AVAILABILITY {
+        INT_UNSIGNED id PK
+        INT_UNSIGNED faculty_id FK
+        TINYINT_UNSIGNED day_of_week "1 Monday - 7 Sunday"
+        TIME start_time
+        TIME end_time
+    }
+
+    FACULTY_CLASS_SCHEDULES {
+        INT_UNSIGNED id PK
+        INT_UNSIGNED faculty_id FK
+        VARCHAR_30 course_code
+        VARCHAR_150 course_title "nullable"
+        VARCHAR_50 section_name "nullable"
+        TINYINT_UNSIGNED day_of_week "1 Monday - 7 Sunday"
+        TIME start_time
+        TIME end_time
+        DATE effective_from
+        DATE effective_to
+    }
+
+    FACULTY_LEAVES {
+        INT_UNSIGNED id PK
+        INT_UNSIGNED faculty_id FK
+        DATETIME start_at
+        DATETIME end_at
+        VARCHAR_255 reason "nullable"
+        ENUM_status status "pending | approved | cancelled"
+        TIMESTAMP created_at
+    }
+
+    NOTIFICATIONS {
+        INT_UNSIGNED id PK
+        INT_UNSIGNED user_id FK
+        VARCHAR_150 title
+        TEXT body
+        TINYINT_1 is_read
+        TIMESTAMP created_at
+    }
+
+    PASSWORD_RESETS {
+        INT_UNSIGNED id PK
+        INT_UNSIGNED user_id FK
+        VARCHAR_64 reset_token UK
+        CHAR_6 reset_code
+        TINYINT_1 used
+        DATETIME expires_at
+        TIMESTAMP created_at
+    }
+
+    USERS ||--o{ CONSULTATIONS : "submits (student_id)"
+    USERS ||--o{ CONSULTATIONS : "receives (faculty_id)"
+    USERS ||--o{ FACULTY_AVAILABILITY : "sets"
+    USERS ||--o{ FACULTY_CLASS_SCHEDULES : "teaches"
+    USERS ||--o{ FACULTY_LEAVES : "takes"
+    USERS ||--o{ NOTIFICATIONS : "receives"
+    USERS ||--o{ PASSWORD_RESETS : "requests"

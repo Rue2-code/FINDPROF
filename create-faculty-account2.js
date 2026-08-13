@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (form) {
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       let isValid = true;
@@ -141,12 +141,26 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // All checks passed
-      successMessage.hidden = false;
-
-      window.setTimeout(() => {
-        window.location.href = "faculty-login.html";
-      }, 2000);
+      const stepOne = JSON.parse(sessionStorage.getItem("findprof_registration") || "{}");
+      if (stepOne.role !== "faculty") {
+        passwordFieldError.textContent = "Please complete the first registration step.";
+        passwordFieldError.hidden = false;
+        return;
+      }
+      try {
+        const response = await fetch("register.php", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...stepOne, email: `${stepOne.id_number}@findprof.local`, phone: contactNumberInput.value, password: passwordInput.value })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Unable to create account.");
+        sessionStorage.removeItem("findprof_registration");
+        successMessage.hidden = false;
+        window.setTimeout(() => { window.location.href = "faculty-login.html"; }, 1200);
+      } catch (error) {
+        passwordFieldError.textContent = error.message;
+        passwordFieldError.hidden = false;
+      }
     });
   }
 
