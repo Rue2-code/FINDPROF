@@ -1,26 +1,51 @@
 // =========================================================
 // REQUEST CONSULTATION PAGE INTERACTIONS
-// - Burger menu + Quick Action: same behavior as the Dashboard
-// - Auto-fills Faculty Member, Student Name, Student ID, and
-//   Program & Year from sample data (structured so it's easy
-//   to swap for the real selected faculty + logged-in student
-//   once the backend/Faculty Directory exist)
+// - Burger menu + Quick Action + Notification bell: same
+//   behavior as the Dashboard / Faculty Directory
+// - Faculty Member auto-fills from the professor the student
+//   selected in the Faculty Directory (handed off via
+//   sessionStorage from faculty-directory.js) -- never
+//   hardcoded to a specific professor
+// - Student Name/ID/Program & Year auto-fill from sample
+//   student data (structured so it's easy to swap for the
+//   real logged-in student once the backend exists)
 // - Preferred Time: custom dropdown populated with every
 //   30-minute slot across a full 24-hour day
-// - Submit Request -> request-submitted.html (not built yet)
+// - Submit Request -> request-submitted.html
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
 
   // ---------------------------------------------------------
-  // Sample data -- replace with the professor selected in the
-  // Faculty Directory and the logged-in student's real record
-  // once the backend exists
+  // Selected faculty -- set by faculty-directory.js
+  // (sessionStorage) when the student clicks "Request
+  // Consultation" on a professor's profile. There is no
+  // backend yet, so sessionStorage is the frontend-only
+  // hand-off mechanism; this page never hardcodes a specific
+  // professor. Falls back to a neutral placeholder only if
+  // the student somehow lands here without selecting anyone
+  // (e.g. navigating here directly).
   // ---------------------------------------------------------
-  const params = new URLSearchParams(window.location.search);
+  const SELECTED_FACULTY_STORAGE_KEY = "profconsult_selected_faculty";
 
-  const SAMPLE_FACULTY_MEMBER = params.get("faculty") || "Engr. Maria Nina Sales";
+  function getSelectedFaculty() {
+    try {
+      const stored = sessionStorage.getItem(SELECTED_FACULTY_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      return null;
+    }
+  }
 
+  const selectedFaculty = getSelectedFaculty();
+  const SELECTED_FACULTY_MEMBER = (selectedFaculty && selectedFaculty.fullName)
+    ? selectedFaculty.fullName
+    : "Selected Faculty Member";
+
+  // ---------------------------------------------------------
+  // Sample student data -- replace with the logged-in
+  // student's real record once the backend exists
+  // ---------------------------------------------------------
   const SAMPLE_STUDENT = {
     name: "John Dela Cruz",
     studentId: "24-00001",
@@ -32,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const studentIdInput = document.getElementById("studentId");
   const programYearInput = document.getElementById("programYear");
 
-  if (facultyMemberInput) facultyMemberInput.textContent = SAMPLE_FACULTY_MEMBER;
+  if (facultyMemberInput) facultyMemberInput.textContent = SELECTED_FACULTY_MEMBER;
   if (studentNameInput) studentNameInput.textContent = SAMPLE_STUDENT.name;
   if (studentIdInput) studentIdInput.textContent = SAMPLE_STUDENT.studentId;
   if (programYearInput) programYearInput.textContent = SAMPLE_STUDENT.programYear;
@@ -113,6 +138,16 @@ document.addEventListener("DOMContentLoaded", () => {
     requestConsultationButton.addEventListener("click", (event) => {
       event.preventDefault();
       // Future: navigate to the consultation request page once it exists
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Notification bell -- navigates to notifications.html
+  // ---------------------------------------------------------
+  const notificationBellButton = document.getElementById("notificationBellButton");
+  if (notificationBellButton) {
+    notificationBellButton.addEventListener("click", () => {
+      window.location.href = "notifications.html";
     });
   }
 
@@ -205,7 +240,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------------------------------------------------------
   // Submit Request -> request-submitted.html
-  // (page not built yet -- this link will 404 until it exists)
   // No backend yet, so this just collects and forwards the
   // entered data structure; wire up the real API call here later.
   // ---------------------------------------------------------

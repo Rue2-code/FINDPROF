@@ -3,9 +3,12 @@
 // - Populates the greeting from sample student data
 //   (will come from the logged-in student's real record
 //   once the backend exists)
+// - Live Philippine date and time, updated every second
 // - Burger menu: slide-in sidebar with dim/blur overlay
 // - Quick Action: fade/slide popup with Find Faculty and
 //   Request Consultation actions
+// - Notification bell: navigates to notifications.html
+//   (TEST/DEMO ONLY -- no real notification data or backend yet)
 // - Search Professor: real-time, case-insensitive, partial-match
 //   filtering, combined with an optional status filter, with a
 //   shared empty state when nothing matches
@@ -159,13 +162,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------------------------------------------------------
-  // Notification bell -- clickable placeholder, no
-  // functionality implemented yet
+  // Notification bell -- navigates to notifications.html.
+  // TEST/DEMO ONLY: no real notification data or backend yet,
+  // this just routes the whole button (not only the image) to
+  // the Notifications page.
   // ---------------------------------------------------------
   const notificationBellButton = document.getElementById("notificationBellButton");
   if (notificationBellButton) {
     notificationBellButton.addEventListener("click", () => {
-      // Intentionally left empty -- functionality comes later
+      window.location.href = "notifications.html";
     });
   }
 

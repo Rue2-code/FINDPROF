@@ -1,9 +1,12 @@
 // =========================================================
 // CREATE FACULTY ACCOUNT (PAGE 2) INTERACTIONS
 // - Back -> create-faculty-account.html
+// - Email Address: validated with the same rule used on the
+//   Student Account page (must contain "@" and end in ".com")
 // - Contact Number: auto-formats to 912-345-6789 (+63 fixed prefix)
 // - Password / Confirm Password: independent Show/Hide toggles
-// - Validates contact number, password rules, and terms checkbox
+// - Validates email, contact number, password rules, and terms
+//   checkbox
 // - On success: shows a success message, then redirects to
 //   faculty-login.html after ~2 seconds
 // - Login link -> faculty-login.html
@@ -71,6 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Form validation + submit
   // ---------------------------------------------------------
   const form = document.getElementById("createFacultyAccountStep2Form");
+  const emailInput = document.getElementById("emailAddress");
+  const emailError = document.getElementById("emailError");
   const contactNumberError = document.getElementById("contactNumberError");
   const passwordInput = document.getElementById("password");
   const passwordFieldError = document.getElementById("passwordFieldError");
@@ -78,6 +83,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const passwordError = document.getElementById("passwordError");
   const agreeTermsInput = document.getElementById("agreeTerms");
   const successMessage = document.getElementById("successMessage");
+
+  function isValidEmail(value) {
+    // Same rule as the Student Account page: must contain "@" and ".com",
+    // with characters on both sides of each
+    return /^[^\s@]+@[^\s@]+\.com$/i.test(value.trim());
+  }
 
   function isValidContactNumber(value) {
     // Exactly 10 digits once hyphens are stripped (e.g. 912-345-6789)
@@ -89,6 +100,11 @@ document.addEventListener("DOMContentLoaded", () => {
       event.preventDefault();
 
       let isValid = true;
+
+      // Email
+      const emailOk = isValidEmail(emailInput.value);
+      emailError.hidden = emailOk;
+      if (!emailOk) isValid = false;
 
       // Contact Number
       const contactNumberOk = isValidContactNumber(contactNumberInput.value);
