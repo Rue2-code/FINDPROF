@@ -1,12 +1,9 @@
 // =========================================================
 // CREATE FACULTY ACCOUNT (PAGE 2) INTERACTIONS
 // - Back -> create-faculty-account.html
-// - Email Address: validated with the same rule used on the
-//   Student Account page (must contain "@" and end in ".com")
 // - Contact Number: auto-formats to 912-345-6789 (+63 fixed prefix)
 // - Password / Confirm Password: independent Show/Hide toggles
-// - Validates email, contact number, password rules, and terms
-//   checkbox
+// - Validates contact number, password rules, and terms checkbox
 // - On success: shows a success message, then redirects to
 //   faculty-login.html after ~2 seconds
 // - Login link -> faculty-login.html
@@ -74,8 +71,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Form validation + submit
   // ---------------------------------------------------------
   const form = document.getElementById("createFacultyAccountStep2Form");
-  const emailInput = document.getElementById("emailAddress");
-  const emailError = document.getElementById("emailError");
   const contactNumberError = document.getElementById("contactNumberError");
   const passwordInput = document.getElementById("password");
   const passwordFieldError = document.getElementById("passwordFieldError");
@@ -84,27 +79,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const agreeTermsInput = document.getElementById("agreeTerms");
   const successMessage = document.getElementById("successMessage");
 
-  function isValidEmail(value) {
-    // Same rule as the Student Account page: must contain "@" and ".com",
-    // with characters on both sides of each
-    return /^[^\s@]+@[^\s@]+\.com$/i.test(value.trim());
-  }
-
   function isValidContactNumber(value) {
     // Exactly 10 digits once hyphens are stripped (e.g. 912-345-6789)
     return value.replace(/\D/g, "").length === 10;
   }
 
   if (form) {
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       let isValid = true;
-
-      // Email
-      const emailOk = isValidEmail(emailInput.value);
-      emailError.hidden = emailOk;
-      if (!emailOk) isValid = false;
 
       // Contact Number
       const contactNumberOk = isValidContactNumber(contactNumberInput.value);
@@ -157,12 +141,26 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // All checks passed
-      successMessage.hidden = false;
-
-      window.setTimeout(() => {
-        window.location.href = "faculty-login.html";
-      }, 2000);
+      const stepOne = JSON.parse(sessionStorage.getItem("findprof_registration") || "{}");
+      if (stepOne.role !== "faculty") {
+        passwordFieldError.textContent = "Please complete the first registration step.";
+        passwordFieldError.hidden = false;
+        return;
+      }
+      try {
+        const response = await fetch("register.php", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...stepOne, email: `${stepOne.id_number}@findprof.local`, phone: contactNumberInput.value, password: passwordInput.value })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Unable to create account.");
+        sessionStorage.removeItem("findprof_registration");
+        successMessage.hidden = false;
+        window.setTimeout(() => { window.location.href = "faculty-login.html"; }, 1200);
+      } catch (error) {
+        passwordFieldError.textContent = error.message;
+        passwordFieldError.hidden = false;
+      }
     });
   }
 

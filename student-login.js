@@ -57,39 +57,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ---------------------------------------------------------
-  // TEMPORARY FRONTEND-ONLY LOGIN VALIDATION
-  // No backend yet -- checks against hardcoded test credentials.
-  // Replace this entire block with a real API call once the
-  // backend exists; everything else on the page stays the same.
-  // ---------------------------------------------------------
-  const TEST_CREDENTIALS = {
-    email: "student@test.com",
-    username: "student01",
-    password: "Student123",
-  };
-
   const loginForm = document.getElementById("studentLoginForm");
   const emailInput = document.getElementById("studentEmail");
   const passwordInput = document.getElementById("studentPassword");
   const loginError = document.getElementById("loginError");
 
   if (loginForm) {
-    loginForm.addEventListener("submit", (event) => {
+    loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const enteredIdentifier = emailInput.value.trim().toLowerCase();
-      const enteredPassword = passwordInput.value;
-
-      const identifierMatches =
-        enteredIdentifier === TEST_CREDENTIALS.email ||
-        enteredIdentifier === TEST_CREDENTIALS.username;
-      const passwordMatches = enteredPassword === TEST_CREDENTIALS.password;
-
-      if (identifierMatches && passwordMatches) {
+      try {
+        const response = await fetch("login.php", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "student", identifier: emailInput.value.trim(), password: passwordInput.value }) });
+        if (!response.ok) throw new Error();
         loginError.hidden = true;
         window.location.href = "student-dashboard.html";
-      } else {
+      } catch (error) {
         loginError.hidden = false;
       }
     });

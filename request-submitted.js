@@ -1,14 +1,10 @@
 // =========================================================
 // REQUEST SUBMITTED PAGE INTERACTIONS
-// - Burger menu + Quick Action + Notification bell: same
-//   behavior as the Dashboard / Faculty Directory
+// - Burger menu + Quick Action: same behavior as the Dashboard
 // - Reads the request data saved by request-consultation.js
 //   (sessionStorage is a frontend-only stand-in; once a backend
 //   exists, this should instead fetch the just-created request
-//   by its ID, e.g. from the URL, rather than sessionStorage).
-//   That request data already carries whichever professor the
-//   student selected in the Faculty Directory, so this page
-//   never hardcodes a specific faculty name.
+//   by its ID, e.g. from the URL, rather than sessionStorage)
 // - Back to Dashboard -> student-dashboard.html
 // =========================================================
 
@@ -131,16 +127,6 @@ document.addEventListener("DOMContentLoaded", () => {
     requestConsultationButton.addEventListener("click", (event) => {
       event.preventDefault();
       // Future: navigate to the consultation request page once it exists
-    });
-  }
-
-  // ---------------------------------------------------------
-  // Notification bell -- navigates to notifications.html
-  // ---------------------------------------------------------
-  const notificationBellButton = document.getElementById("notificationBellButton");
-  if (notificationBellButton) {
-    notificationBellButton.addEventListener("click", () => {
-      window.location.href = "notifications.html";
     });
   }
 

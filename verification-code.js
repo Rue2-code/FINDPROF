@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   const origin = params.get("from") === "faculty" ? "faculty" : "student";
   const originQuery = `?from=${origin}`;
+  const token = params.get("token") || "";
+  const error = params.get("error");
 
   const backButton = document.getElementById("backButton");
   if (backButton) {
@@ -105,31 +107,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   startCountdown();
 
-  // ---------------------------------------------------------
-  // Verify -> create-new-password.html if correct,
-  // otherwise show "Incorrect verification code."
-  //
-  // No backend yet, so this checks against a placeholder code.
-  // Replace DEMO_CORRECT_CODE with real server-side verification
-  // once the backend exists.
-  // ---------------------------------------------------------
-  const DEMO_CORRECT_CODE = "123456";
-
   const form = document.getElementById("verificationForm");
   const verificationError = document.getElementById("verificationError");
+  const tokenInput = document.getElementById("resetToken");
+  const codeInput = document.getElementById("verificationCode");
+
+  if (tokenInput) tokenInput.value = token;
+  if (error && verificationError) {
+    verificationError.textContent = error;
+    verificationError.hidden = false;
+  }
 
   if (form) {
     form.addEventListener("submit", (event) => {
-      event.preventDefault();
-
       const enteredCode = getEnteredCode();
-
-      if (enteredCode.length === 6 && enteredCode === DEMO_CORRECT_CODE) {
-        verificationError.hidden = true;
-        window.location.href = `create-new-password.html${originQuery}`;
-      } else {
+      if (enteredCode.length !== 6 || !token) {
+        event.preventDefault();
+        verificationError.textContent = token
+          ? "Please enter the 6-digit verification code."
+          : "Your reset link is missing or expired. Please request a new code.";
         verificationError.hidden = false;
+        return;
       }
+
+      codeInput.value = enteredCode;
     });
   }
 
