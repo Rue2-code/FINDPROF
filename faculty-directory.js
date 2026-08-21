@@ -1,4 +1,179 @@
 // =========================================================
+// STUDENT-SHARED.JS
+// Shared behavior for every Student-side page:
+// - Burger menu: slide-in sidebar with dim/blur overlay
+// - Quick Action: fade/slide popup (Find Faculty / Send Request)
+// - Notification bell: navigates to notifications.html
+// - Status filter popup: fade/slide open + outside-click close
+//
+// Page-specific files (e.g. faculty-directory.js) should call
+// StudentShared.init() is NOT required -- this file wires
+// itself up on DOMContentLoaded. Page-specific scripts should
+// only add their own listeners for their own elements (e.g.
+// the faculty search input, faculty cards, etc.) and should
+// NOT re-declare any of the listeners below.
+// =========================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  // ---------------------------------------------------------
+  // Burger sidebar
+  // ---------------------------------------------------------
+  const hamburgerButton = document.getElementById("hamburgerButton");
+  const sidebar = document.getElementById("sidebar");
+  const sidebarOverlay = document.getElementById("sidebarOverlay");
+  const sidebarClose = document.getElementById("sidebarClose");
+
+  function openSidebar() {
+    sidebar.classList.add("is-open");
+    sidebarOverlay.hidden = false;
+    requestAnimationFrame(() => sidebarOverlay.classList.add("is-open"));
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove("is-open");
+    sidebarOverlay.classList.remove("is-open");
+    window.setTimeout(() => {
+      sidebarOverlay.hidden = true;
+    }, 250);
+  }
+
+  if (hamburgerButton) hamburgerButton.addEventListener("click", openSidebar);
+  if (sidebarClose) sidebarClose.addEventListener("click", closeSidebar);
+  if (sidebarOverlay) sidebarOverlay.addEventListener("click", closeSidebar);
+
+  // ---------------------------------------------------------
+  // Quick Action popup
+  // ---------------------------------------------------------
+  const quickActionButton = document.getElementById("quickActionButton");
+  const quickActionPanel = document.getElementById("quickActionPanel");
+
+  function openQuickAction() {
+    quickActionPanel.hidden = false;
+    requestAnimationFrame(() => quickActionPanel.classList.add("is-open"));
+    quickActionButton.setAttribute("aria-expanded", "true");
+  }
+
+  function closeQuickAction() {
+    quickActionPanel.classList.remove("is-open");
+    quickActionButton.setAttribute("aria-expanded", "false");
+    window.setTimeout(() => {
+      quickActionPanel.hidden = true;
+    }, 200);
+  }
+
+  if (quickActionButton) {
+    quickActionButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = quickActionPanel.classList.contains("is-open");
+      isOpen ? closeQuickAction() : openQuickAction();
+    });
+  }
+
+  // "Send Request" doesn't have a fixed destination yet when no
+  // faculty is pre-selected -- left wired up but intentionally
+  // not navigating anywhere until that flow is defined
+  const requestConsultationButton = document.getElementById("requestConsultationButton");
+  if (requestConsultationButton) {
+    requestConsultationButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      // Future: navigate to the consultation request page once it exists
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Notification bell -- navigates to notifications.html
+  // ---------------------------------------------------------
+  const notificationBellButton = document.getElementById("notificationBellButton");
+  if (notificationBellButton) {
+    notificationBellButton.addEventListener("click", () => {
+      window.location.href = "notifications.html";
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Status filter popup (search bar + filter icon)
+  // Page-specific JS reads `window.StudentShared.activeStatus`
+  // and listens for the "statusfilterchange" event to re-apply
+  // its own search/filter logic.
+  // ---------------------------------------------------------
+  const filterButton = document.getElementById("filterButton");
+  const filterPanel = document.getElementById("filterPanel");
+  const filterOptions = filterPanel
+    ? Array.from(filterPanel.querySelectorAll(".filter-option"))
+    : [];
+
+  window.StudentShared = window.StudentShared || {};
+  window.StudentShared.activeStatus = null;
+
+  function openFilterPanel() {
+    filterPanel.hidden = false;
+    requestAnimationFrame(() => filterPanel.classList.add("is-open"));
+    filterButton.setAttribute("aria-expanded", "true");
+  }
+
+  function closeFilterPanel() {
+    filterPanel.classList.remove("is-open");
+    filterButton.setAttribute("aria-expanded", "false");
+    window.setTimeout(() => {
+      filterPanel.hidden = true;
+    }, 200);
+  }
+
+  if (filterButton) {
+    filterButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = filterPanel.classList.contains("is-open");
+      isOpen ? closeFilterPanel() : openFilterPanel();
+    });
+  }
+
+  filterOptions.forEach((option) => {
+    option.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const status = option.dataset.status;
+
+      if (window.StudentShared.activeStatus === status) {
+        window.StudentShared.activeStatus = null;
+        option.classList.remove("is-active");
+      } else {
+        window.StudentShared.activeStatus = status;
+        filterOptions.forEach((opt) => opt.classList.remove("is-active"));
+        option.classList.add("is-active");
+      }
+
+      document.dispatchEvent(new CustomEvent("statusfilterchange", {
+        detail: { status: window.StudentShared.activeStatus },
+      }));
+    });
+  });
+
+  // Close Quick Action and/or Filter popups on outside click
+  document.addEventListener("click", (event) => {
+    if (
+      quickActionPanel &&
+      !quickActionPanel.hidden &&
+      !quickActionPanel.contains(event.target) &&
+      event.target !== quickActionButton
+    ) {
+      closeQuickAction();
+    }
+
+    if (
+      filterPanel &&
+      !filterPanel.hidden &&
+      !filterPanel.contains(event.target) &&
+      event.target !== filterButton &&
+      !filterButton.contains(event.target)
+    ) {
+      closeFilterPanel();
+    }
+  });
+
+});
+
+
+// =========================================================
 // FACULTY-DIRECTORY.JS
 // Page-specific behavior for the Faculty Directory:
 // - Renders faculty cards from FACULTY_DIRECTORY_DATA
@@ -6,6 +181,10 @@
 // - Combines with the shared status filter (student-shared.js)
 // - "View Profile" opens the split-view profile panel with an
 //   animation and populates it from the same data object
+// - "Request Consultation" persists the selected professor's
+//   full record to sessionStorage so request-consultation.html
+//   (and, after submitting, request-submitted.html) can display
+//   that SAME professor instead of a hardcoded one
 //
 // NOTE -- TEST DATA ONLY:
 // We are testing from a student account and there is no
@@ -14,8 +193,8 @@
 // here. Once real faculty accounts exist, this array (and the
 // render/lookup functions that use it) should be replaced by
 // data fetched from those accounts -- the rest of the page
-// logic (search, filter, profile panel, animation) should not
-// need to change.
+// logic (search, filter, profile panel, animation, selected-
+// faculty hand-off) should not need to change.
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -115,14 +294,10 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   ];
 
-  const STATUS_DOT_CLASS = {
-    available: "status-available",
-    teaching: "status-teaching",
-    meeting: "status-meeting",
-    consultation: "status-consultation",
-    onleave: "status-onleave",
-    offline: "status-offline",
-  };
+  // Key used to hand the selected professor off to
+  // request-consultation.html and, from there, request-submitted.html.
+  // Frontend-only stand-in until real faculty accounts/backend exist.
+  const SELECTED_FACULTY_STORAGE_KEY = "profconsult_selected_faculty";
 
   // ---------------------------------------------------------
   // Element references
@@ -147,21 +322,21 @@ document.addEventListener("DOMContentLoaded", () => {
       card.dataset.status = faculty.status;
       card.dataset.facultyId = faculty.id;
 
-      const dotClass = STATUS_DOT_CLASS[faculty.status] || "status-offline";
-
+      // Availability status is no longer shown here -- this page is now
+      // purely for identifying/selecting a professor for consultation.
+      // faculty.status/statusLabel are kept in the data model (and still
+      // power the existing filter panel under the hood) but are not
+      // rendered as a dot or label anymore.
       card.innerHTML = `
         <img src="${faculty.photo}" alt="${faculty.fullName}" class="faculty-photo">
         <div class="faculty-info">
           <p class="faculty-name">Engr. ${faculty.lastName}</p>
           <p class="faculty-meta faculty-meta-row">
-            <span>${faculty.statusLabel}</span>
-            <span class="faculty-meta-dot" aria-hidden="true">&middot;</span>
             <span>${faculty.program}</span>
             <span class="faculty-meta-dot" aria-hidden="true">&middot;</span>
             <span>${faculty.office}</span>
           </p>
         </div>
-        <span class="status-dot ${dotClass} faculty-status-dot" aria-hidden="true"></span>
         <button type="button" class="view-profile-button" data-faculty-id="${faculty.id}">View Profile</button>
       `;
 
@@ -216,8 +391,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // profile-right) view.
   // ---------------------------------------------------------
   function buildProfileMarkup(faculty) {
-    const dotClass = STATUS_DOT_CLASS[faculty.status] || "status-offline";
-
     const hoursRows = faculty.hours.map((entry) => `
       <li class="profile-hours-row">
         <span class="profile-hours-day">${entry.day}</span>
@@ -225,13 +398,11 @@ document.addEventListener("DOMContentLoaded", () => {
       </li>
     `).join("");
 
+    // Availability status is no longer shown in the profile -- this page
+    // is now purely for identifying/selecting a professor for consultation.
     return `
       <img src="${faculty.photo}" alt="${faculty.fullName}" class="profile-photo">
       <p class="profile-name">${faculty.fullName}</p>
-      <p class="profile-status-row">
-        <span class="status-dot ${dotClass}" aria-hidden="true"></span>
-        <span class="profile-status-label">${faculty.statusLabel}</span>
-      </p>
       <p class="profile-program">${faculty.program}</p>
       <p class="profile-office">${faculty.office}</p>
 
@@ -263,6 +434,23 @@ document.addEventListener("DOMContentLoaded", () => {
     profilePanel.innerHTML = buildProfileMarkup(faculty);
     profilePanel.hidden = false;
     directoryContainer.classList.add("is-split");
+
+    // Persist the selected faculty so request-consultation.html (and,
+    // after submission, request-submitted.html) can display the same
+    // professor instead of a hardcoded one. sessionStorage is a
+    // frontend-only stand-in until real faculty accounts/backend exist.
+    // The facultyId query param on the link above is kept as a fallback.
+    const requestConsultationLink = profilePanel.querySelector(".request-consultation-button");
+    if (requestConsultationLink) {
+      requestConsultationLink.addEventListener("click", () => {
+        try {
+          sessionStorage.setItem(SELECTED_FACULTY_STORAGE_KEY, JSON.stringify(faculty));
+        } catch (error) {
+          // sessionStorage unavailable -- request-consultation.html will
+          // fall back to its own neutral placeholder if it can't read this
+        }
+      });
+    }
 
     // Let the browser paint `hidden` removal first so the
     // opacity/transform transition actually animates in

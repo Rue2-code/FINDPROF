@@ -2,8 +2,9 @@
 // ACCOUNT SETTINGS PAGE INTERACTIONS
 // - Burger menu + Quick Action: copied verbatim from the
 //   proven-working Student Dashboard implementation
-// - Notification bell icon: clickable placeholder, no
-//   functionality implemented yet
+// - Notification bell icon: navigates to notifications.html
+//   on click (TEST/DEMO ONLY -- no real notification data or
+//   backend yet)
 // - Settings checkboxes: persisted via localStorage as a
 //   frontend-only stand-in until a real backend exists
 // - Save button: persists settings and shows a green success
@@ -103,13 +104,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ---------------------------------------------------------
-  // Notification bell -- clickable placeholder, no
-  // functionality implemented yet
+  // Notification bell -- navigates to notifications.html.
+  // TEST/DEMO ONLY: no real notification data or backend yet,
+  // this just routes the whole button (not only the image) to
+  // the Notifications page.
   // ---------------------------------------------------------
   const notificationBellButton = document.getElementById("notificationBellButton");
   if (notificationBellButton) {
     notificationBellButton.addEventListener("click", () => {
-      // Intentionally left empty -- functionality comes later
+      window.location.href = "notifications.html";
     });
   }
 

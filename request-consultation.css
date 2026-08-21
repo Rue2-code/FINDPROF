@@ -125,16 +125,34 @@ input {
   border-radius: 2px;
 }
 
+/* Notification bell + Quick Action sit side by side, same pill
+   style and vertically centered on one line. */
 .navbar-right {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
+.notification-bell-button,
 .notification-button {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.15);
   overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+.notification-bell-button:hover,
+.notification-button:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+.notification-bell-button img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .notification-button img {
@@ -712,6 +730,10 @@ input[type="date"].info-input {
 
   .dashboard-navbar {
     padding: 0 16px;
+  }
+
+  .navbar-right {
+    gap: 10px;
   }
 
   .request-page {

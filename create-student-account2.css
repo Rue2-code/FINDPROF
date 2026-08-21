@@ -297,6 +297,15 @@ button {
 /* =========================================================
    MOBILE NUMBER FIELD
    Fixed, non-editable +63 prefix on the left
+
+   direction/unicode-bidi below force the "+63" prefix and the
+   typed digits to always render left-to-right, regardless of
+   the device/browser's locale. Without this, a "+" followed
+   only by digits has no strong-direction character, so under
+   an RTL locale context the Unicode bidi algorithm can flip
+   the whole run's visual order to "63+" even though the
+   underlying text is still "+63" -- phone numbers must always
+   display LTR internationally.
 ========================================================= */
 .mobile-input-group {
   position: relative;
@@ -304,6 +313,7 @@ button {
   background-color: #d9d9d9;
   border-radius: 999px;
   overflow: hidden;
+  direction: ltr;
 }
 
 /* Focus ring applied to the whole pill-shaped group, not the
@@ -334,6 +344,8 @@ button {
   color: var(--color-text-dark);
   pointer-events: none;
   z-index: 1;
+  direction: ltr;
+  unicode-bidi: bidi-override;
 }
 
 /* Divider between "+63" and the number -- shorter than the
@@ -363,6 +375,8 @@ button {
   -webkit-appearance: none;
   appearance: none;
   outline: none;
+  direction: ltr;
+  unicode-bidi: bidi-override;
 }
 
 .mobile-input:focus {

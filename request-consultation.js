@@ -1,27 +1,55 @@
 // =========================================================
 // REQUEST CONSULTATION PAGE INTERACTIONS
-// - Burger menu + Quick Action: same behavior as the Dashboard
-// - Auto-fills Faculty Member, Student Name, Student ID, and
-//   Program & Year from sample data (structured so it's easy
-//   to swap for the real selected faculty + logged-in student
-//   once the backend/Faculty Directory exist)
+// - Burger menu + Quick Action + Notification bell: same
+//   behavior as the Dashboard / Faculty Directory
+// - Faculty Member auto-fills from the professor the student
+//   selected in the Faculty Directory (handed off via
+//   sessionStorage from faculty-directory.js) -- never
+//   hardcoded to a specific professor
+// - Student Name/ID/Program & Year auto-fill from sample
+//   student data (structured so it's easy to swap for the
+//   real logged-in student once the backend exists)
 // - Preferred Time: custom dropdown populated with every
 //   30-minute slot across a full 24-hour day
-// - Submit Request -> request-submitted.html (not built yet)
+// - Submit Request -> request-submitted.html
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
 
   // ---------------------------------------------------------
-  // Sample data -- replace with the professor selected in the
-  // Faculty Directory and the logged-in student's real record
-  // once the backend exists
+  // Selected faculty -- set by faculty-directory.js
+  // (sessionStorage) when the student clicks "Request
+  // Consultation" on a professor's profile. There is no
+  // backend yet, so sessionStorage is the frontend-only
+  // hand-off mechanism; this page never hardcodes a specific
+  // professor. Falls back to a neutral placeholder only if
+  // the student somehow lands here without selecting anyone
+  // (e.g. navigating here directly).
   // ---------------------------------------------------------
+  const SELECTED_FACULTY_STORAGE_KEY = "profconsult_selected_faculty";
+
   const params = new URLSearchParams(window.location.search);
+  const facultyIdFromParams = params.get("facultyId");
 
-  const facultyId = params.get("facultyId");
-  const SAMPLE_FACULTY_MEMBER = params.get("faculty") || "Selected faculty member";
+  function getSelectedFaculty() {
+    try {
+      const stored = sessionStorage.getItem(SELECTED_FACULTY_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      return null;
+    }
+  }
 
+  const selectedFaculty = getSelectedFaculty();
+  const facultyId = (selectedFaculty && selectedFaculty.id) || facultyIdFromParams || "";
+  const SELECTED_FACULTY_MEMBER = (selectedFaculty && selectedFaculty.fullName)
+    ? selectedFaculty.fullName
+    : (params.get("faculty") || "Selected Faculty Member");
+
+  // ---------------------------------------------------------
+  // Sample student data -- replace with the logged-in
+  // student's real record once the backend exists
+  // ---------------------------------------------------------
   const SAMPLE_STUDENT = {
     name: "John Dela Cruz",
     studentId: "24-00001",
@@ -33,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const studentIdInput = document.getElementById("studentId");
   const programYearInput = document.getElementById("programYear");
 
-  if (facultyMemberInput) facultyMemberInput.textContent = SAMPLE_FACULTY_MEMBER;
+  if (facultyMemberInput) facultyMemberInput.textContent = SELECTED_FACULTY_MEMBER;
   if (studentNameInput) studentNameInput.textContent = SAMPLE_STUDENT.name;
   if (studentIdInput) studentIdInput.textContent = SAMPLE_STUDENT.studentId;
   if (programYearInput) programYearInput.textContent = SAMPLE_STUDENT.programYear;
@@ -114,6 +142,16 @@ document.addEventListener("DOMContentLoaded", () => {
     requestConsultationButton.addEventListener("click", (event) => {
       event.preventDefault();
       // Future: navigate to the consultation request page once it exists
+    });
+  }
+
+  // ---------------------------------------------------------
+  // Notification bell -- navigates to notifications.html
+  // ---------------------------------------------------------
+  const notificationBellButton = document.getElementById("notificationBellButton");
+  if (notificationBellButton) {
+    notificationBellButton.addEventListener("click", () => {
+      window.location.href = "notifications.html";
     });
   }
 
@@ -206,7 +244,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------------------------------------------------------
   // Submit Request -> request-submitted.html
-  // (page not built yet -- this link will 404 until it exists)
   // No backend yet, so this just collects and forwards the
   // entered data structure; wire up the real API call here later.
   // ---------------------------------------------------------
@@ -220,31 +257,53 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      const purpose = document.getElementById("consultationPurpose").value.trim();
+      const message = document.getElementById("additionalMessage").value.trim();
+      const preferredDate = document.getElementById("preferredDate").value;
+      const preferredTime = document.getElementById("preferredTime").value;
+
+      if (!purpose || !preferredDate || !preferredTime) {
+        alert("Please complete the purpose, preferred date, and preferred time.");
+        return;
+      }
+
       const requestData = {
         facultyMember: facultyMemberInput.textContent,
         studentName: studentNameInput.textContent,
         studentId: studentIdInput.textContent,
         programYear: programYearInput.textContent,
-        purpose: document.getElementById("consultationPurpose").value,
-        message: document.getElementById("additionalMessage").value,
-        preferredDate: document.getElementById("preferredDate").value,
-        preferredTime: document.getElementById("preferredTime").value,
+        purpose,
+        message,
+        preferredDate,
+        preferredTime,
         status: "Pending Approval",
       };
 
-      try {
-        const response = await fetch("submit-consultation.php", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ faculty_id: facultyId, purpose: requestData.purpose, message: requestData.message, preferred_date: requestData.preferredDate, preferred_time: requestData.preferredTime })
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || "Unable to submit request.");
-        requestData.requestId = `REQ-${result.id}`;
-        sessionStorage.setItem("profconsult_last_request", JSON.stringify(requestData));
-      } catch (error) {
-        alert(error.message);
-        return;
+      if (/^\d+$/.test(String(facultyId))) {
+        try {
+          const response = await fetch("submit-consultation.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              faculty_id: facultyId,
+              purpose: requestData.purpose,
+              message: requestData.message,
+              preferred_date: requestData.preferredDate,
+              preferred_time: requestData.preferredTime,
+            }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.message || "Unable to submit request.");
+          requestData.requestId = `REQ-${result.id}`;
+        } catch (error) {
+          alert(error.message);
+          return;
+        }
+      } else {
+        requestData.requestId = `REQ-${Date.now()}`;
       }
+
+      sessionStorage.setItem("profconsult_last_request", JSON.stringify(requestData));
 
       // Also keep the display list in sync for the static My Requests page.
       // so it automatically shows up on my-requests.html, growing
