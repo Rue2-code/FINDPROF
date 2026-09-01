@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="verification-code.css">
+  <link rel="stylesheet" href="css/verification-code.css">
 </head>
 <body>
 
@@ -39,7 +39,7 @@
       A 6-digit verification code has been sent to your email or mobile number.
     </p>
 
-    <form class="registration-form" id="verificationForm" action="verify-reset-code.php" method="POST">
+    <form class="registration-form" id="verificationForm" action="api/verify-reset-code.php" method="POST">
       <input type="hidden" id="resetToken" name="token">
       <input type="hidden" id="verificationCode" name="code">
 
@@ -72,6 +72,6 @@
 
   </main>
 
-  <script src="verification-code.js"></script>
+  <script src="js/verification-code.js"></script>
 </body>
 </html>
