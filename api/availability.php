@@ -1,13 +1,35 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Saves and returns faculty availability status for professor and student dashboards.
+
 require __DIR__ . '/bootstrap.php';
 
 $db = database();
 
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $user = requireRole('faculty');
+        $sessionUser = requireRole('faculty');
+        ensureProfilePhotoColumn($db);
+        $refreshUser = $db->prepare(
+            'SELECT User_ID, Username, Full_Name, Email, Mobile_Number, Profile_Photo, Role
+             FROM users
+             WHERE User_ID = ? AND Account_Status = ?
+             LIMIT 1'
+        );
+        $refreshUser->execute([(int) $sessionUser['id'], 'active']);
+        $record = $refreshUser->fetch();
+
+        if (!$record) {
+            fail('Please log in first.', 401);
+        }
+
+        $user = rememberUserSession(publicUser($record));
+
+        if ($user['role'] !== 'faculty') {
+            fail('Please log in with a faculty account to change availability.', 403);
+        }
+
         $profile = userProfile($db, $user['id'], 'faculty');
         if (!$profile) {
             fail('Faculty profile was not found.', 404);
@@ -36,7 +58,8 @@ try {
     $date = clean((string) ($_GET['date'] ?? date('Y-m-d')));
 
     if ($facultyId <= 0) {
-        $user = currentUser();
+        $requestedRole = clean((string) ($_GET['role'] ?? ''));
+        $user = $requestedRole === 'faculty' ? currentUser('faculty') : currentUser();
         if ($user['role'] !== 'faculty') {
             fail('Please provide a faculty ID.');
         }

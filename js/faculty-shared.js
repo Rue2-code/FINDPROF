@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the faculty shared page, including UI events and API calls.
 // =========================================================
 // FACULTY SHARED LAYOUT INTERACTIONS
 // Reused across every Faculty page. Handles only the shared

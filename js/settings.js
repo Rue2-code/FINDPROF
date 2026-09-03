@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the settings page, including UI events and API calls.
 // =========================================================
 // ACCOUNT SETTINGS PAGE INTERACTIONS
 // - Burger menu + Quick Action: copied verbatim from the

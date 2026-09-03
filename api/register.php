@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Creates student or faculty accounts and profile records.
+
 require __DIR__ . '/bootstrap.php';
 requirePost();
 
@@ -86,13 +88,14 @@ try {
 
     $db->commit();
 
-    $_SESSION['user'] = publicUser([
+    $_SESSION['user'] = rememberUserSession(publicUser([
         'User_ID' => $userId,
         'Role' => $role,
         'Full_Name' => $name,
         'Username' => $username,
         'Email' => $email,
-    ]);
+        'Mobile_Number' => $phone,
+    ]));
 
     reply(['ok' => true, 'message' => 'Account created.', 'user' => $_SESSION['user']], 201);
 } catch (PDOException $exception) {

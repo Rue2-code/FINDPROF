@@ -1,10 +1,15 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Returns faculty profile, photo, department, and availability data for student search.
+
 require __DIR__ . '/bootstrap.php';
 
 try {
-    $statement = database()->query(
+    $db = database();
+    ensureProfilePhotoColumn($db);
+
+    $statement = $db->query(
         'SELECT
             f.Faculty_ID,
             f.Department,
@@ -13,6 +18,7 @@ try {
             u.Full_Name,
             u.Email,
             u.Mobile_Number,
+            u.Profile_Photo,
             (
                 SELECT a.Status
                 FROM availability a

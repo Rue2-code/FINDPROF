@@ -1,35 +1,65 @@
+// SYSTEM NOTE: Controls client-side behavior for the faculty profile page, including UI events and API calls.
 // =========================================================
 // FACULTY PROFILE -- PAGE-SPECIFIC INTERACTIONS
 // - View/Edit mode toggle
 // - Custom Program dropdown (data-driven, not a native <select>)
 // - Name / Email / Phone validation on Save
 // - Faculty ID always read-only, never editable
+// - Profile photo upload and persistent saved image rendering
 //
-// Represents the currently logged-in faculty account. Prototype
-// data for now -- once the backend exists, FACULTY_ACCOUNT should
-// be populated from the logged-in session instead, and this same
-// object should feed the Faculty Directory and other faculty
-// pages so there's a single source of truth per account.
+// Represents the currently logged-in faculty account. It is loaded
+// from api/session.php so this page shows the signed-in faculty
+// member instead of prototype profile data.
 //
 // Shared shell behavior (navbar, sidebar, quick action,
 // notification bell) lives in faculty-shared.js.
 // =========================================================
 
 // ---------------------------------------------------------
-// Prototype logged-in faculty account -- replace with real
-// session data once backend authentication exists.
-// ---------------------------------------------------------
 const FACULTY_ACCOUNT = {
-  name: "Engr. Juan Dela Cruz",
-  facultyId: "24-00001",
-  program: "Computer Engineering",
-  email: "juan.delacruz@cvsu.edu.ph",
-  phone: "912-345-6789", // local part only; +63 prefix is fixed in the UI
+  name: "",
+  facultyId: "",
+  program: "",
+  email: "",
+  phone: "", // local part only; +63 prefix is fixed in the UI
+  profilePhoto: "",
 };
 
 // Structured so more programs can be added later without
 // touching any markup or logic -- just extend this array.
 const PROGRAM_OPTIONS = ["Computer Engineering"];
+const PROGRAM_LABELS = {
+  "computer-engineering": "Computer Engineering",
+};
+
+function displayProgramName(value) {
+  return PROGRAM_LABELS[value] || value || "";
+}
+
+function formatPhoneInput(rawValue) {
+  const digits = String(rawValue || "").replace(/\D/g, "").slice(0, 10);
+  const part1 = digits.slice(0, 3);
+  const part2 = digits.slice(3, 6);
+  const part3 = digits.slice(6, 10);
+  return [part1, part2, part3].filter(Boolean).join("-");
+}
+
+function applySessionProfile(sessionData) {
+  const user = sessionData && sessionData.user ? sessionData.user : {};
+  const profile = sessionData && sessionData.profile ? sessionData.profile : {};
+  const department = displayProgramName(profile.Department || profile.department || "");
+
+  FACULTY_ACCOUNT.name = user.name || "";
+  FACULTY_ACCOUNT.facultyId = user.username || "";
+  FACULTY_ACCOUNT.program = department || "Computer Engineering";
+  FACULTY_ACCOUNT.email = user.email || "";
+  FACULTY_ACCOUNT.phone = formatPhoneInput(user.phone || "");
+  FACULTY_ACCOUNT.profilePhoto = user.profile_photo || "";
+
+  if (FACULTY_ACCOUNT.program && !PROGRAM_OPTIONS.includes(FACULTY_ACCOUNT.program)) {
+    PROGRAM_OPTIONS.push(FACULTY_ACCOUNT.program);
+  }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -55,6 +85,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const phoneInput = document.getElementById("editFacultyPhone");
   const phoneError = document.getElementById("phoneError");
   const phoneWrap = phoneInput ? phoneInput.closest(".faculty-phone-input-wrap") : null;
+  const facultyProfilePhoto = document.getElementById("facultyProfilePhoto");
+  const facultyProfilePhotoEdit = document.getElementById("facultyProfilePhotoEdit");
+  const facultyProfilePhotoInput = document.getElementById("facultyProfilePhotoInput");
 
   const programDropdown = document.getElementById("programDropdown");
   const programTrigger = document.getElementById("programDropdownTrigger");
@@ -74,10 +107,54 @@ document.addEventListener("DOMContentLoaded", () => {
     viewId.textContent = FACULTY_ACCOUNT.facultyId;
     viewProgram.textContent = FACULTY_ACCOUNT.program;
     viewEmail.textContent = FACULTY_ACCOUNT.email;
-    viewPhone.textContent = `+63 ${FACULTY_ACCOUNT.phone}`;
+    viewPhone.textContent = FACULTY_ACCOUNT.phone ? `+63 ${FACULTY_ACCOUNT.phone}` : "";
+    if (facultyProfilePhoto && FACULTY_ACCOUNT.profilePhoto) {
+      facultyProfilePhoto.src = `${FACULTY_ACCOUNT.profilePhoto}?v=${Date.now()}`;
+    }
   }
 
-  renderViewMode();
+  async function uploadProfilePhoto(file) {
+    const formData = new FormData();
+    formData.append("profile_photo", file);
+
+    const response = await fetch("api/profile-photo.php", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.ok || !data.profile_photo) {
+      throw new Error(data.message || "Unable to save profile photo.");
+    }
+
+    return data.profile_photo;
+  }
+
+  async function loadCurrentFacultyProfile() {
+    try {
+      const response = await fetch("api/session.php?role=faculty", {
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error("Session unavailable");
+      }
+
+      const data = await response.json();
+      if (!data.ok || !data.user || data.user.role !== "faculty") {
+        throw new Error("Faculty session unavailable");
+      }
+
+      applySessionProfile(data);
+      selectedProgram = FACULTY_ACCOUNT.program;
+      renderViewMode();
+    } catch (error) {
+      window.location.href = "faculty-login.html";
+    }
+  }
+
+  loadCurrentFacultyProfile();
 
   // ---------------------------------------------------------
   // Program dropdown -- built from PROGRAM_OPTIONS so future
@@ -153,14 +230,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // as 3-3-4 (matches the Philippine mobile format used
   // elsewhere in Prof Consult, e.g. 912-345-6789).
   // ---------------------------------------------------------
-  function formatPhoneInput(rawValue) {
-    const digits = rawValue.replace(/\D/g, "").slice(0, 10);
-    const part1 = digits.slice(0, 3);
-    const part2 = digits.slice(3, 6);
-    const part3 = digits.slice(6, 10);
-    return [part1, part2, part3].filter(Boolean).join("-");
-  }
-
   if (phoneInput) {
     phoneInput.addEventListener("input", () => {
       phoneInput.value = formatPhoneInput(phoneInput.value);
@@ -255,12 +324,14 @@ document.addEventListener("DOMContentLoaded", () => {
     viewSection.hidden = true;
     editForm.hidden = false;
     editProfileButton.hidden = true;
+    if (facultyProfilePhotoEdit) facultyProfilePhotoEdit.hidden = false;
   }
 
   function exitEditMode() {
     editForm.hidden = true;
     viewSection.hidden = false;
     editProfileButton.hidden = false;
+    if (facultyProfilePhotoEdit) facultyProfilePhotoEdit.hidden = true;
     closeProgramDropdown();
   }
 
@@ -312,6 +383,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (saveButton) {
     saveButton.addEventListener("click", handleSave);
+  }
+
+  if (facultyProfilePhotoInput && facultyProfilePhoto) {
+    facultyProfilePhotoInput.addEventListener("change", async () => {
+      const file = facultyProfilePhotoInput.files && facultyProfilePhotoInput.files[0];
+      if (!file) return;
+
+      const previewUrl = URL.createObjectURL(file);
+      facultyProfilePhoto.src = previewUrl;
+
+      try {
+        const savedPhoto = await uploadProfilePhoto(file);
+        FACULTY_ACCOUNT.profilePhoto = savedPhoto;
+        facultyProfilePhoto.src = `${savedPhoto}?v=${Date.now()}`;
+      } catch (error) {
+        alert(error.message);
+        renderViewMode();
+      } finally {
+        URL.revokeObjectURL(previewUrl);
+        facultyProfilePhotoInput.value = "";
+      }
+    });
   }
 
 });

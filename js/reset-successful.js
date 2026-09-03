@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the reset successful page, including UI events and API calls.
 // =========================================================
 // PASSWORD RESET SUCCESSFUL PAGE INTERACTIONS
 // - Back -> the login page the user originally came from

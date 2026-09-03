@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- SYSTEM NOTE: Defines the faculty profile page structure used by the Prof Consult web app. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -138,6 +139,10 @@
           class="faculty-profile-photo"
           id="facultyProfilePhoto"
         >
+        <label class="faculty-profile-photo-edit" id="facultyProfilePhotoEdit" hidden>
+          <input type="file" id="facultyProfilePhotoInput" accept="image/*" class="faculty-profile-photo-input">
+          <span aria-hidden="true">&#9998;</span>
+        </label>
       </div>
       <button type="button" class="faculty-edit-profile-button" id="editProfileButton">
         Edit Profile
@@ -149,21 +154,21 @@
 
       <!-- ================= VIEW MODE ================= -->
       <div class="faculty-profile-info-card faculty-profile-view" id="facultyProfileView">
-        <p class="faculty-profile-name" id="viewFacultyName">Engr. Juan Dela Cruz</p>
-        <p class="faculty-profile-id" id="viewFacultyId">24-00001</p>
+        <p class="faculty-profile-name" id="viewFacultyName">Loading profile...</p>
+        <p class="faculty-profile-id" id="viewFacultyId"></p>
 
         <dl class="faculty-profile-details">
           <div class="faculty-profile-detail-row">
             <dt>Program:</dt>
-            <dd id="viewFacultyProgram">Computer Engineering</dd>
+            <dd id="viewFacultyProgram"></dd>
           </div>
           <div class="faculty-profile-detail-row">
             <dt>Email:</dt>
-            <dd id="viewFacultyEmail">juan.delacruz@cvsu.edu.ph</dd>
+            <dd id="viewFacultyEmail"></dd>
           </div>
           <div class="faculty-profile-detail-row">
             <dt>Phone Number:</dt>
-            <dd id="viewFacultyPhone">+63 912-345-6789</dd>
+            <dd id="viewFacultyPhone"></dd>
           </div>
         </dl>
       </div>
@@ -200,7 +205,7 @@
               aria-expanded="false"
               aria-labelledby="programDropdownLabel programDropdownValue"
             >
-              <span id="programDropdownValue">Computer Engineering</span>
+              <span id="programDropdownValue"></span>
               <span class="faculty-dropdown-caret" aria-hidden="true">&#9660;</span>
             </button>
             <ul class="faculty-dropdown-list" id="programDropdownList" role="listbox" hidden>
@@ -249,7 +254,7 @@
   </main>
 
   <script src="js/faculty-shared.js"></script>
-  <script src="js/faculty-profile.js"></script>
+  <script src="js/faculty-profile.js?v=20260903-2345"></script>
 
 </body>
 </html>

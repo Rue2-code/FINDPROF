@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the faculty change password page, including UI events and API calls.
 // =========================================================
 // FACULTY CHANGE PASSWORD -- PAGE-SPECIFIC INTERACTIONS
 // - Show/Hide toggle for each password field (real <button>s)

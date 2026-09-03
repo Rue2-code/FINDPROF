@@ -1,3 +1,4 @@
+-- SYSTEM NOTE: Defines the database schema used by accounts, profiles, availability, notifications, and consultation requests.
 CREATE DATABASE IF NOT EXISTS prof_consult CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE prof_consult;
 
@@ -22,6 +23,7 @@ CREATE TABLE users (
   Full_Name VARCHAR(150) NOT NULL,
   Email VARCHAR(190) NOT NULL UNIQUE,
   Mobile_Number VARCHAR(20) NOT NULL,
+  Profile_Photo VARCHAR(255) NULL,
   Role ENUM('student', 'faculty', 'admin') NOT NULL,
   Account_Status ENUM('active', 'inactive', 'pending', 'blocked') NOT NULL DEFAULT 'active'
 ) ENGINE=InnoDB;
@@ -95,6 +97,7 @@ CREATE TABLE consultation_requests (
   Student_ID INT UNSIGNED NOT NULL,
   Faculty_ID INT UNSIGNED NOT NULL,
   Purpose TEXT NOT NULL,
+  Additional_Message TEXT NULL,
   Request_Date DATE NOT NULL,
   Preferred_Time TIME NOT NULL,
   Status ENUM('pending', 'approved', 'declined', 'rescheduled', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',

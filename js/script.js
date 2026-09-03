@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the script page, including UI events and API calls.
 
 document.addEventListener("DOMContentLoaded", () => {
   const loadingText = document.getElementById("loadingText");

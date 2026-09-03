@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Records or reads attendance-related API data for consultation workflows.
+
 require __DIR__ . '/bootstrap.php';
 requirePost();
 

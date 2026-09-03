@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Checks whether a submitted reset code is valid before password reset.
+
 require __DIR__ . '/bootstrap.php';
 requirePost();
 

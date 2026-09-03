@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the forgot password page, including UI events and API calls.
 // =========================================================
 // FORGOT PASSWORD PAGE INTERACTIONS
 // This page is shared by both Student Login and Faculty Login.

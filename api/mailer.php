@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Builds and sends email messages for password reset flows.
+
 // Builds and sends OTP emails using PHPMailer so password reset codes are delivered through SMTP.
 
 use PHPMailer\PHPMailer\Exception;

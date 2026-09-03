@@ -1,8 +1,7 @@
+// SYSTEM NOTE: Controls client-side behavior for the faculty consultation requests page, including UI events and API calls.
 // =========================================================
 // FACULTY CONSULTATION REQUESTS -- PAGE-SPECIFIC INTERACTIONS
-// - Renders pending requests from a data array (horizontally
-//   scrollable), so incoming requests can later be added just
-//   by pushing to REQUESTS -- no HTML changes needed.
+// - Renders pending requests from api/consultation-requests.php.
 // - View More expands a card in place to show Program, Year
 //   and Set, and Additional Message; clicking outside any
 //   expanded card collapses it back.
@@ -10,96 +9,135 @@
 //   from the pending queue so the next one moves up.
 // - Reschedule is a frontend-only placeholder for now.
 //
-// IMPORTANT -- FACULTY TEST ACCOUNT, MOCK DATA ONLY:
-// REQUESTS lives entirely in memory (a plain JS variable), with
-// no localStorage/sessionStorage/cookies/backend of any kind.
-// A full page reload re-runs this script from scratch, which is
-// exactly what resets the mock requests back to their original
-// pending state -- any Accept/Decline from a previous visit is
-// intentionally NOT remembered. This is deliberate: the Faculty
-// Dashboard's Pending Consultation Requests card follows this
-// same in-memory, resets-on-reload pattern (see faculty-dashboard.js)
-// so both pages behave identically, even though neither page's
-// actions carry over to the other -- once a real backend exists,
-// both pages will instead fetch the same real, persisted request
-// state, and the accept/decline/view-more actions themselves
-// stay exactly the same.
-//
-// Frontend/prototype only -- there is no backend yet. Shared
-// shell behavior (navbar, sidebar, quick action, notification
-// bell) lives in faculty-shared.js and is untouched by this file.
+// Shared shell behavior (navbar, sidebar, quick action,
+// notification bell) lives in faculty-shared.js and is untouched
+// by this file.
 // =========================================================
 
-// ---------------------------------------------------------
-// Mock pending requests -- replace with real data from the
-// backend once consultation requests are persisted server-side.
-// Re-initialized fresh every time this script runs (i.e. every
-// page load/reload), which is what gives the reset-on-reload
-// behavior -- no storage read/write involved.
-// ---------------------------------------------------------
-let REQUESTS = [
-  {
-    id: "req-1",
-    name: "Juan Dela Cruz",
-    studentId: "22-00145",
-    type: "Research Proposal",
-    date: "July 20, 10:00 AM",
-    program: "BS Computer Engineering",
-    yearSet: "3B",
-    message: "Good day po! I'd like to consult about my capstone research proposal title and methodology before I submit it for approval.",
-    status: "pending",
-  },
-  {
-    id: "req-2",
-    name: "Joselita Rizal",
-    studentId: "22-00098",
-    type: "Research Proposal",
-    date: "July 20, 10:00 AM",
-    program: "BS Computer Engineering",
-    yearSet: "3B",
-    message: "Hi sir/ma'am, may I request a consultation regarding the scope and limitations section of our group's proposal?",
-    status: "pending",
-  },
-  {
-    id: "req-3",
-    name: "Mark Santos",
-    studentId: "21-00567",
-    type: "Thesis Defense Prep",
-    date: "July 21, 1:00 PM",
-    program: "BS Computer Engineering",
-    yearSet: "4A",
-    message: "Requesting a short consultation to go over my defense slides and anticipated panel questions.",
-    status: "pending",
-  },
-  {
-    id: "req-4",
-    name: "Angela Cruz",
-    studentId: "23-00212",
-    type: "Grade Concern",
-    date: "July 22, 9:30 AM",
-    program: "BS Computer Engineering",
-    yearSet: "2A",
-    message: "I'd like to clarify some items on my midterm exam whenever you have a free slot this week.",
-    status: "pending",
-  },
-];
-
-// ---------------------------------------------------------
-// Notification hook -- intentionally a no-op placeholder for
-// now. The backend team owns building out the real notification
-// system; this just marks where Accept/Decline would trigger it
-// once that exists. No localStorage or any other persistence.
-// ---------------------------------------------------------
-function notifyRequestAnswered(request, decision) {
-  // Placeholder only -- wire this to the real notification
-  // system once the backend exists. Intentionally does nothing
-  // and stores nothing for now.
-}
+let REQUESTS = [];
 
 document.addEventListener("DOMContentLoaded", () => {
 
   const scrollContainer = document.getElementById("requestsScrollContainer");
   const noRequestsMessage = document.getElementById("noRequestsMessage");
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#039;",
+    }[character]));
+  }
+
+  function formatDateTime(dateValue, timeValue) {
+    if (!dateValue) return "Date not set";
+
+    const [hours = "00", minutes = "00"] = String(timeValue || "00:00").split(":");
+    const date = new Date(`${dateValue}T${hours}:${minutes}:00`);
+    if (Number.isNaN(date.getTime())) return `${dateValue} ${timeValue || ""}`.trim();
+
+    return date.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
+  function displayYear(value) {
+    const normalized = String(value || "").trim();
+    const labels = {
+      "1": "1st Year",
+      "2": "2nd Year",
+      "3": "3rd Year",
+      "4": "4th Year",
+      "5": "5th Year",
+    };
+
+    return labels[normalized] || normalized;
+  }
+
+  function requestFromApi(row) {
+    // Convert the database year value into the label shown on request cards.
+    const year = displayYear(row.Year_Level);
+    // Keep the section separate so blank sections do not create extra punctuation.
+    const section = row.Section || "";
+
+    return {
+      // Store the database request id so button clicks update the correct row.
+      id: String(row.Request_ID),
+      // Show the real student name from the joined users table.
+      name: row.Student_Name || "Unnamed Student",
+      // Prefer the user's student number, then fall back to the profile id.
+      studentId: row.Student_Number || row.Student_ID || "",
+      // Purpose becomes the request subject displayed on the card.
+      type: row.Purpose || "Consultation",
+      // Combine the saved request date and preferred time for display.
+      date: formatDateTime(row.Request_Date, row.Preferred_Time),
+      // Program, year, section, and message come from the current student's profile/request.
+      program: row.Program || "Program not set",
+      yearSet: [year, section].filter(Boolean).join(" - ") || "Year and section not set",
+      message: row.Additional_Message || "No additional message.",
+      // Status controls whether the request remains visible in the pending list.
+      status: row.Status || "pending",
+    };
+  }
+
+  async function loadRequests() {
+    if (scrollContainer) {
+      scrollContainer.innerHTML = "";
+    }
+    if (noRequestsMessage) {
+      noRequestsMessage.textContent = "Loading consultation requests...";
+      noRequestsMessage.hidden = false;
+    }
+
+    try {
+      // Ask the API for faculty requests so the backend uses the professor session.
+      const response = await fetch("api/consultation-requests.php?role=faculty", {
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+      });
+      // Parse the JSON reply from the API.
+      const result = await response.json();
+
+      // Stop rendering if the API reports an authentication or database problem.
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "Unable to load consultation requests.");
+      }
+
+      // Convert raw database rows into the card shape used by this page.
+      REQUESTS = (result.requests || []).map(requestFromApi);
+      // Rebuild the visible cards after loading fresh data.
+      renderRequests();
+    } catch (error) {
+      if (noRequestsMessage) {
+        noRequestsMessage.textContent = error.message || "Unable to load consultation requests.";
+        noRequestsMessage.hidden = false;
+      }
+    }
+  }
+
+  async function updateRequestStatus(requestId, status) {
+    // Include role=faculty so Accept/Reschedule/Decline uses the professor session.
+    const response = await fetch("api/consultation-requests.php?role=faculty", {
+      method: "POST",
+      // Tell PHP that the request body is JSON.
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      // Send the selected request id and the new status to the backend.
+      body: JSON.stringify({ request_id: requestId, status }),
+    });
+    // Read the backend response so errors can be shown to the professor.
+    const result = await response.json();
+
+    // Turn API failures into an error message the click handler can alert.
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message || "Unable to update consultation request.");
+    }
+  }
 
   // ---------------------------------------------------------
   // Render
@@ -111,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     card.innerHTML = `
       <div class="request-card-header">
-        <p class="request-name">${request.name}</p>
+        <p class="request-name">${escapeHtml(request.name)}</p>
         <span class="request-avatar" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <circle cx="12" cy="8" r="4"></circle>
@@ -121,19 +159,21 @@ document.addEventListener("DOMContentLoaded", () => {
         <button type="button" class="request-accept-button" data-action="accept">Accept</button>
       </div>
 
-      <p class="request-type">${request.type}</p>
-      <p class="request-date">Preferred Date: ${request.date}</p>
+      <p class="request-type">${escapeHtml(request.type)}</p>
+      <p class="request-date">Preferred Date: ${escapeHtml(request.date)}</p>
 
       <div class="request-expanded-info">
         <div class="request-info-col">
+          <p class="request-info-label">Student ID:</p>
+          <p class="request-info-value">${escapeHtml(request.studentId)}</p>
           <p class="request-info-label">Program:</p>
-          <p class="request-info-value">${request.program}</p>
+          <p class="request-info-value">${escapeHtml(request.program)}</p>
           <p class="request-info-label">Year and Set:</p>
-          <p class="request-info-value">${request.yearSet}</p>
+          <p class="request-info-value">${escapeHtml(request.yearSet)}</p>
         </div>
         <div class="request-info-col">
           <p class="request-info-label">Additional Message:</p>
-          <p class="request-message">${request.message}</p>
+          <p class="request-message">${escapeHtml(request.message)}</p>
         </div>
       </div>
 
@@ -160,18 +200,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (noRequestsMessage) {
+      noRequestsMessage.textContent = "No pending consultation requests right now.";
       noRequestsMessage.hidden = pending.length > 0;
     }
   }
 
-  renderRequests();
+  loadRequests();
 
   // ---------------------------------------------------------
   // Card interactions -- delegated to the scroll container so
   // re-rendering never loses event bindings.
   // ---------------------------------------------------------
   if (scrollContainer) {
-    scrollContainer.addEventListener("click", (event) => {
+    scrollContainer.addEventListener("click", async (event) => {
       const actionButton = event.target.closest("[data-action]");
       if (!actionButton) return;
 
@@ -194,11 +235,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (action === "reschedule") {
         const toast = card.querySelector(".request-toast");
-        if (toast) {
-          toast.textContent = "Reschedule request noted. (Feature coming soon.)";
-          toast.classList.add("is-visible");
-          window.setTimeout(() => toast.classList.remove("is-visible"), 2500);
+        actionButton.textContent = "Rescheduled";
+        actionButton.disabled = true;
+
+        try {
+          await updateRequestStatus(request.id, "rescheduled");
+          request.status = "rescheduled";
+        } catch (error) {
+          alert(error.message);
+          actionButton.textContent = "Reschedule";
+          actionButton.disabled = false;
+          return;
         }
+
+        if (toast) {
+          toast.textContent = "Request marked for reschedule.";
+          toast.classList.add("is-visible");
+        }
+        window.setTimeout(renderRequests, 900);
       }
 
       if (action === "accept") {
@@ -210,8 +264,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const viewMoreButton = card.querySelector(".request-view-more-button");
         if (viewMoreButton) viewMoreButton.disabled = true;
 
-        request.status = "accepted";
-        notifyRequestAnswered(request, "accepted");
+        try {
+          await updateRequestStatus(request.id, "approved");
+          request.status = "approved";
+        } catch (error) {
+          alert(error.message);
+          actionButton.textContent = "Accept";
+          actionButton.disabled = false;
+          actionButton.classList.remove("is-accepted");
+          if (declineButton) declineButton.disabled = false;
+          if (viewMoreButton) viewMoreButton.disabled = false;
+          return;
+        }
 
         // Give the person a moment to see "Accepted" before the
         // card leaves the pending queue and the next one shifts up.
@@ -227,8 +291,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const viewMoreButton = card.querySelector(".request-view-more-button");
         if (viewMoreButton) viewMoreButton.disabled = true;
 
-        request.status = "declined";
-        notifyRequestAnswered(request, "declined");
+        try {
+          await updateRequestStatus(request.id, "declined");
+          request.status = "declined";
+        } catch (error) {
+          alert(error.message);
+          actionButton.textContent = "Decline";
+          actionButton.disabled = false;
+          actionButton.classList.remove("is-declined");
+          if (acceptButton) acceptButton.disabled = false;
+          if (viewMoreButton) viewMoreButton.disabled = false;
+          return;
+        }
 
         window.setTimeout(renderRequests, 900);
       }

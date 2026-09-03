@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the verification code page, including UI events and API calls.
 // =========================================================
 // VERIFICATION CODE PAGE INTERACTIONS
 // - Back -> forgot-password.html (preserving ?from= origin)

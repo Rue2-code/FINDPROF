@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the create new password page, including UI events and API calls.
 // =========================================================
 // CREATE NEW PASSWORD PAGE INTERACTIONS
 // - Back -> verification-code.html (preserving ?from= origin)

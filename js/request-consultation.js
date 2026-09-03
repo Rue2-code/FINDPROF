@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the request consultation page, including UI events and API calls.
 // =========================================================
 // REQUEST CONSULTATION PAGE INTERACTIONS
 // - Burger menu + Quick Action + Notification bell: same
@@ -6,9 +7,8 @@
 //   selected in the Faculty Directory (handed off via
 //   sessionStorage from faculty-directory.js) -- never
 //   hardcoded to a specific professor
-// - Student Name/ID/Program & Year auto-fill from sample
-//   student data (structured so it's easy to swap for the
-//   real logged-in student once the backend exists)
+// - Student Name/ID/Program & Year auto-fill from the current
+//   logged-in student session
 // - Preferred Time: custom dropdown populated with every
 //   30-minute slot across a full 24-hour day
 // - Submit Request -> request-submitted.html
@@ -46,14 +46,16 @@ document.addEventListener("DOMContentLoaded", () => {
     ? selectedFaculty.fullName
     : (params.get("faculty") || "Selected Faculty Member");
 
-  // ---------------------------------------------------------
-  // Sample student data -- replace with the logged-in
-  // student's real record once the backend exists
-  // ---------------------------------------------------------
-  const SAMPLE_STUDENT = {
-    name: "John Dela Cruz",
-    studentId: "24-00001",
-    programYear: "BSCPE (Computer Engineering) - 3rd Year",
+  const COURSE_LABELS = {
+    "computer-engineering": "BSCPE (Computer Engineering)",
+  };
+
+  const YEAR_LABELS = {
+    "1": "1st Year",
+    "2": "2nd Year",
+    "3": "3rd Year",
+    "4": "4th Year",
+    "5": "5th Year",
   };
 
   const facultyMemberInput = document.getElementById("facultyMember");
@@ -62,9 +64,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const programYearInput = document.getElementById("programYear");
 
   if (facultyMemberInput) facultyMemberInput.textContent = SELECTED_FACULTY_MEMBER;
-  if (studentNameInput) studentNameInput.textContent = SAMPLE_STUDENT.name;
-  if (studentIdInput) studentIdInput.textContent = SAMPLE_STUDENT.studentId;
-  if (programYearInput) programYearInput.textContent = SAMPLE_STUDENT.programYear;
+
+  function displayCourse(value) {
+    return COURSE_LABELS[value] || value || "";
+  }
+
+  function displayYear(value) {
+    const normalized = String(value || "");
+    return YEAR_LABELS[normalized] || normalized;
+  }
+
+  async function loadCurrentStudent() {
+    try {
+      const response = await fetch("api/session.php?role=student", {
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok || !data.user || data.user.role !== "student") {
+        throw new Error("Student session unavailable");
+      }
+
+      const user = data.user || {};
+      const profile = data.profile || {};
+      const program = displayCourse(profile.Program || profile.program || "");
+      const year = displayYear(profile.Year_Level || profile.year_level || "");
+
+      if (studentNameInput) studentNameInput.textContent = user.name || "";
+      if (studentIdInput) studentIdInput.textContent = user.username || "";
+      if (programYearInput) {
+        programYearInput.textContent = [program, year].filter(Boolean).join(" - ");
+      }
+    } catch (error) {
+      window.location.href = "student-login.html";
+    }
+  }
+
+  loadCurrentStudent();
 
   // ---------------------------------------------------------
   // Burger sidebar (same behavior as the Student Dashboard)

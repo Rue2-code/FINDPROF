@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the request submitted page, including UI events and API calls.
 // =========================================================
 // REQUEST SUBMITTED PAGE INTERACTIONS
 // - Burger menu + Quick Action + Notification bell: same

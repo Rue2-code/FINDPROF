@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the choose account page, including UI events and API calls.
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('[data-nav="back"]').forEach((link) => {
     link.addEventListener("click", (event) => {

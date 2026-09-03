@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Returns notification records for the currently logged-in user.
+
 require __DIR__ . '/bootstrap.php';
 
 $user = currentUser();

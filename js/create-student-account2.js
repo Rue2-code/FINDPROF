@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the create student account2 page, including UI events and API calls.
 // =========================================================
 // CREATE STUDENT ACCOUNT (PAGE 2) INTERACTIONS
 // - Back -> create-student-account.html

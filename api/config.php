@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Stores database and mail configuration used by the backend APIs.
+
 // Database connection settings and the reusable database() function.
 // Every PHP handler uses this file to connect to the Prof Consult MySQL database.
 
@@ -15,10 +17,11 @@ const DB_PASS = '';
 const SMTP_HOST = 'smtp-relay.brevo.com';
 const SMTP_PORT = 587;
 const SMTP_USERNAME = 'b6a3e7001@smtp-brevo.com';
-const SMTP_PASSWORD = 'xsmtpsib-65b818cbbe3cf1ebbe412048c2e4bcc83bc512751d6b25d5d10694d507af508c-Fm0gXCRTsupS9KHa';
 const SMTP_ENCRYPTION = 'tls';
 const SMTP_FROM_EMAIL = 'profconsult2026@gmail.com';
 const SMTP_FROM_NAME = 'Prof Consult';
+
+define('SMTP_PASSWORD', getenv('SMTP_PASSWORD') ?: '');
 
 function database(): PDO {
     static $pdo;

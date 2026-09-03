@@ -1,14 +1,12 @@
+// SYSTEM NOTE: Controls client-side behavior for the student dashboard page, including UI events and API calls.
 // =========================================================
 // STUDENT DASHBOARD INTERACTIONS
-// - Populates the greeting from sample student data
-//   (will come from the logged-in student's real record
-//   once the backend exists)
+// - Populates the greeting from the logged-in student session
 // - Live Philippine date and time, updated every second
 // - Burger menu: slide-in sidebar with dim/blur overlay
 // - Quick Action: fade/slide popup with Find Faculty and
 //   Request Consultation actions
 // - Notification bell: navigates to notifications.html
-//   (TEST/DEMO ONLY -- no real notification data or backend yet)
 // - Search Professor: real-time, case-insensitive, partial-match
 //   filtering, combined with an optional status filter, with a
 //   shared empty state when nothing matches
@@ -16,22 +14,32 @@
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  // ---------------------------------------------------------
-  // Sample student account -- replace with real session/user
-  // data once backend authentication exists
-  // ---------------------------------------------------------
-  const SAMPLE_STUDENT = {
-    fullName: "John Dela Cruz",
-    firstName: "John",
-    studentId: "24-00001",
-    program: "BSCPE (Computer Engineering)",
-    yearLevel: "3rd Year",
-  };
-
   const firstNameEl = document.getElementById("studentFirstName");
-  if (firstNameEl) {
-    firstNameEl.textContent = SAMPLE_STUDENT.firstName;
+
+  function firstNameFrom(fullName) {
+    const parts = String(fullName || "").trim().split(/\s+/).filter(Boolean);
+    return parts[0] || "Student";
   }
+
+  async function loadCurrentStudent() {
+    try {
+      const response = await fetch("api/session.php?role=student", {
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok || !data.user || data.user.role !== "student") {
+        throw new Error("Student session unavailable");
+      }
+
+      if (firstNameEl) firstNameEl.textContent = firstNameFrom(data.user.name);
+    } catch (error) {
+      window.location.href = "student-login.html";
+    }
+  }
+
+  loadCurrentStudent();
 
   // ---------------------------------------------------------
   // Live Philippine date and time, directly below the greeting.
@@ -235,27 +243,167 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ---------------------------------------------------------
-  // Search Professor + Status Filter: real-time, case-insensitive,
-  // partial-match search combined with an optional status filter.
-  // Both apply together -- a professor must match the search text
-  // AND the selected status (when one is active) to stay visible.
-  // Shows a shared empty-state message when nothing matches;
-  // empty search and/or no active filter restores the full list.
+  // Search Professor + Status Filter: the cards are loaded from
+  // the real faculty accounts returned by api/faculty-directory.php.
   // ---------------------------------------------------------
   const searchInput = document.getElementById("professorSearchInput");
-  const professorCards = Array.from(document.querySelectorAll(".professor-card"));
+  const professorList = document.getElementById("professorList");
+  const availabilityList = document.getElementById("availabilityList");
+  const notificationsList = document.getElementById("notificationsList");
   const noResultsMessage = document.getElementById("noResultsMessage");
 
   let activeStatus = null;
+  let facultyDirectoryData = [];
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#039;",
+    }[character]));
+  }
+
+  function normalizeStatus(value) {
+    const normalized = String(value || "offline").trim().toLowerCase();
+    const map = {
+      "available": "available",
+      "in class": "teaching",
+      "teaching": "teaching",
+      "meeting": "meeting",
+      "consultation": "consultation",
+      "on leave": "onleave",
+      "onleave": "onleave",
+      "unavailable": "offline",
+      "offline": "offline",
+    };
+
+    return map[normalized] || "offline";
+  }
+
+  function statusLabel(status) {
+    const labels = {
+      available: "Available",
+      teaching: "Teaching Class",
+      meeting: "Meeting",
+      consultation: "Consultation",
+      onleave: "On Leave",
+      offline: "Offline",
+    };
+
+    return labels[status] || "Offline";
+  }
+
+  function displayName(userName) {
+    const name = String(userName || "Unnamed Faculty").trim();
+    return /^engr\./i.test(name) ? name : `Engr. ${name}`;
+  }
+
+  function facultyFromApi(row) {
+    const status = normalizeStatus(row.Current_Status);
+    const profilePhoto = String(row.Profile_Photo || row.profile_photo || "").trim();
+
+    return {
+      id: String(row.Faculty_ID),
+      fullName: displayName(row.Full_Name),
+      department: row.Department || "Department not set",
+      office: row.Office || "Office not set",
+      status,
+      statusLabel: statusLabel(status),
+      photo: profilePhoto || "images/user1.png",
+    };
+  }
+
+  function renderEmpty(message) {
+    if (professorList) professorList.innerHTML = "";
+    if (availabilityList) availabilityList.innerHTML = `<li>${message}</li>`;
+    if (noResultsMessage) {
+      noResultsMessage.textContent = message;
+      noResultsMessage.hidden = false;
+    }
+  }
+
+  function renderFacultyCards() {
+    if (!professorList) return;
+
+    professorList.innerHTML = facultyDirectoryData.map((faculty) => `
+      <article class="professor-card" data-status="${escapeHtml(faculty.status)}" data-faculty-id="${escapeHtml(faculty.id)}">
+        <img src="${escapeHtml(faculty.photo)}" alt="${escapeHtml(faculty.fullName)}" class="professor-photo">
+        <div class="professor-info">
+          <p class="professor-name">${escapeHtml(faculty.fullName)}</p>
+          <p class="professor-meta">${escapeHtml(faculty.department)} | ${escapeHtml(faculty.statusLabel)}</p>
+        </div>
+        <span class="status-dot status-${escapeHtml(faculty.status)}" aria-hidden="true"></span>
+      </article>
+    `).join("");
+  }
+
+  function renderAvailability() {
+    if (!availabilityList) return;
+
+    availabilityList.innerHTML = facultyDirectoryData.map((faculty) => `
+      <li>
+        <span class="status-dot status-${escapeHtml(faculty.status)}" aria-hidden="true"></span>
+        ${escapeHtml(faculty.fullName)} | ${escapeHtml(faculty.statusLabel)}
+      </li>
+    `).join("");
+  }
+
+  function renderNotifications(notifications) {
+    if (!notificationsList) return;
+
+    notificationsList.innerHTML = "";
+
+    if (notifications.length === 0) {
+      notificationsList.innerHTML = "<li>No notifications yet.</li>";
+      return;
+    }
+
+    notifications.slice(0, 3).forEach((notification) => {
+      notificationsList.innerHTML += `
+        <li>
+          <span class="notification-check" aria-hidden="true">&check;</span>
+          ${escapeHtml(notification.Message || "")}
+        </li>
+      `;
+    });
+  }
+
+  async function loadNotifications() {
+    if (!notificationsList) return;
+
+    notificationsList.innerHTML = "<li>Loading notifications...</li>";
+
+    try {
+      const response = await fetch("api/notifications.php", {
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "Unable to load notifications.");
+      }
+
+      renderNotifications(result.notifications || []);
+    } catch (error) {
+      notificationsList.innerHTML = `<li>${escapeHtml(error.message || "Unable to load notifications.")}</li>`;
+    }
+  }
 
   function applyFilters() {
     const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    const professorCards = professorList
+      ? Array.from(professorList.querySelectorAll(".professor-card"))
+      : [];
     let visibleCount = 0;
 
     professorCards.forEach((card) => {
       const name = card.querySelector(".professor-name").textContent.toLowerCase();
+      const meta = card.querySelector(".professor-meta").textContent.toLowerCase();
       const status = card.dataset.status || "";
-      const matchesSearch = query === "" || name.includes(query);
+      const matchesSearch = query === "" || name.includes(query) || meta.includes(query);
       const matchesStatus = !activeStatus || status === activeStatus;
       const matches = matchesSearch && matchesStatus;
 
@@ -264,7 +412,38 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (noResultsMessage) {
+      noResultsMessage.textContent = "No faculty members match your search or selected status.";
       noResultsMessage.hidden = visibleCount > 0;
+    }
+  }
+
+  async function loadFacultyDirectory(showLoading = false) {
+    if (showLoading) {
+      renderEmpty("Loading faculty...");
+    }
+
+    try {
+      const response = await fetch("api/faculty-directory.php", { cache: "no-store" });
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        throw new Error(result.message || "Unable to load faculty directory.");
+      }
+
+      facultyDirectoryData = (result.faculty || []).map(facultyFromApi);
+
+      if (facultyDirectoryData.length === 0) {
+        renderEmpty("No faculty accounts have been created yet.");
+        return;
+      }
+
+      renderFacultyCards();
+      renderAvailability();
+      applyFilters();
+    } catch (error) {
+      if (showLoading || facultyDirectoryData.length === 0) {
+        renderEmpty(error.message || "Unable to load faculty directory.");
+      }
     }
   }
 
@@ -291,4 +470,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  loadFacultyDirectory(true);
+  loadNotifications();
+
+  window.setInterval(() => {
+    loadFacultyDirectory(false);
+  }, 5000);
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      loadFacultyDirectory(false);
+      loadNotifications();
+    }
+  });
 });

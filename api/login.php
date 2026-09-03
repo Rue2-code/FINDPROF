@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Authenticates users and stores the correct role session.
+
 require __DIR__ . '/bootstrap.php';
 requirePost();
 
@@ -15,7 +17,7 @@ if (!in_array($role, ['student', 'faculty'], true) || $identifier === '' || $pas
 
 try {
     $statement = database()->prepare(
-        'SELECT User_ID, Username, Password, Full_Name, Email, Role, Account_Status
+        'SELECT User_ID, Username, Password, Full_Name, Email, Mobile_Number, Role, Account_Status
          FROM users
          WHERE Role = ? AND (LOWER(Email) = ? OR LOWER(Username) = ?)
          LIMIT 1'
@@ -29,7 +31,7 @@ try {
         fail('Incorrect email/ID number or password.', 401);
     }
 
-    $_SESSION['user'] = publicUser($record);
+    $_SESSION['user'] = rememberUserSession(publicUser($record));
     reply(['ok' => true, 'user' => $_SESSION['user']]);
 } catch (PDOException $exception) {
     error_log($exception->getMessage());

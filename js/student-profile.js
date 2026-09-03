@@ -1,30 +1,59 @@
+// SYSTEM NOTE: Controls client-side behavior for the student profile page, including UI events and API calls.
 // =========================================================
 // STUDENT PROFILE PAGE INTERACTIONS
 // - Burger menu + Quick Action: same behavior as the Dashboard
-// - Populates profile fields from sample student data
-//   (will come from the logged-in student's real record,
-//   structured so it's easy to swap for real backend data)
+// - Populates profile fields from api/session.php so the page
+//   shows the currently logged-in student.
 // - Edit Profile: toggles all fields except Student Number
 //   into an editable state; "Save Changes" exits edit mode.
-//   No backend yet, so this only updates the page's own state.
 // - Profile photo: clicking the edit badge (visible only in
-//   edit mode) opens a file picker and previews the chosen image
+//   edit mode) opens a file picker, uploads it, and shows the
+//   saved image returned by the backend.
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", () => {
 
   // ---------------------------------------------------------
-  // Sample student account -- replace with real session/user
-  // data once backend authentication exists
+  // Current student profile state. The loader below fills this
+  // object from the PHP session response, then the renderer copies
+  // it into the visible form fields.
   // ---------------------------------------------------------
-  const SAMPLE_STUDENT = {
-    fullName: "John Dela Cruz",
-    studentNumber: "24-00001",
-    course: "computer-engineering",
-    yearLevel: "3",
-    email: "john.delacruz@example.com",
-    phone: "912-345-6789",
+  const CURRENT_STUDENT = {
+    fullName: "",
+    studentNumber: "",
+    course: "",
+    yearLevel: "",
+    email: "",
+    phone: "",
+    profilePhoto: "",
   };
+
+  const COURSE_LABELS = {
+    "computer-engineering": "BSCPE (Computer Engineering)",
+  };
+
+  function formatPhoneInput(rawValue) {
+    const digits = String(rawValue || "").replace(/\D/g, "").slice(0, 10);
+    const part1 = digits.slice(0, 3);
+    const part2 = digits.slice(3, 6);
+    const part3 = digits.slice(6, 10);
+    return [part1, part2, part3].filter(Boolean).join("-");
+  }
+
+  function ensureCourseOption(courseValue) {
+    if (!courseSelect || !courseValue) return;
+
+    const hasOption = Array.from(courseSelect.options).some((option) => {
+      return option.value === courseValue;
+    });
+
+    if (!hasOption) {
+      const option = document.createElement("option");
+      option.value = courseValue;
+      option.textContent = COURSE_LABELS[courseValue] || courseValue;
+      courseSelect.appendChild(option);
+    }
+  }
 
   const fullNameInput = document.getElementById("profileFullName");
   const studentNumberInput = document.getElementById("profileStudentNumber");
@@ -32,13 +61,86 @@ document.addEventListener("DOMContentLoaded", () => {
   const yearLevelSelect = document.getElementById("profileYearLevel");
   const emailInput = document.getElementById("profileEmail");
   const phoneInput = document.getElementById("profilePhone");
+  const profilePhoto = document.getElementById("profilePhoto");
 
-  if (fullNameInput) fullNameInput.value = SAMPLE_STUDENT.fullName;
-  if (studentNumberInput) studentNumberInput.value = SAMPLE_STUDENT.studentNumber;
-  if (courseSelect) courseSelect.value = SAMPLE_STUDENT.course;
-  if (yearLevelSelect) yearLevelSelect.value = SAMPLE_STUDENT.yearLevel;
-  if (emailInput) emailInput.value = SAMPLE_STUDENT.email;
-  if (phoneInput) phoneInput.value = SAMPLE_STUDENT.phone;
+  if (phoneInput) {
+    phoneInput.addEventListener("input", () => {
+      phoneInput.value = formatPhoneInput(phoneInput.value);
+    });
+  }
+
+  function applySessionProfile(sessionData) {
+    const user = sessionData && sessionData.user ? sessionData.user : {};
+    const profile = sessionData && sessionData.profile ? sessionData.profile : {};
+
+    CURRENT_STUDENT.fullName = user.name || "";
+    CURRENT_STUDENT.studentNumber = user.username || "";
+    CURRENT_STUDENT.course = profile.Program || profile.program || "";
+    CURRENT_STUDENT.yearLevel = String(profile.Year_Level || profile.year_level || "");
+    CURRENT_STUDENT.email = user.email || "";
+    CURRENT_STUDENT.phone = formatPhoneInput(user.phone || "");
+    CURRENT_STUDENT.profilePhoto = user.profile_photo || "";
+  }
+
+  function renderStudentProfile() {
+    ensureCourseOption(CURRENT_STUDENT.course);
+
+    if (fullNameInput) fullNameInput.value = CURRENT_STUDENT.fullName;
+    if (studentNumberInput) studentNumberInput.value = CURRENT_STUDENT.studentNumber;
+    if (courseSelect) courseSelect.value = CURRENT_STUDENT.course;
+    if (yearLevelSelect) yearLevelSelect.value = CURRENT_STUDENT.yearLevel;
+    if (emailInput) emailInput.value = CURRENT_STUDENT.email;
+    if (phoneInput) phoneInput.value = CURRENT_STUDENT.phone;
+    if (profilePhoto && CURRENT_STUDENT.profilePhoto) {
+      profilePhoto.src = `${CURRENT_STUDENT.profilePhoto}?v=${Date.now()}`;
+    }
+  }
+
+  async function uploadProfilePhoto(file) {
+    const formData = new FormData();
+    formData.append("profile_photo", file);
+
+    const response = await fetch("api/profile-photo.php", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.ok || !data.profile_photo) {
+      throw new Error(data.message || "Unable to save profile photo.");
+    }
+
+    return data.profile_photo;
+  }
+
+  async function loadCurrentStudentProfile() {
+    try {
+      // api/session.php reads the active PHP session and returns
+      // both the shared user row and the student-specific profile row.
+      const response = await fetch("api/session.php?role=student", {
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error("Session unavailable");
+      }
+
+      const data = await response.json();
+      if (!data.ok || !data.user || data.user.role !== "student") {
+        throw new Error("Student session unavailable");
+      }
+
+      // Convert the API fields into the shape used by this page,
+      // then render the current student in every profile input.
+      applySessionProfile(data);
+      renderStudentProfile();
+    } catch (error) {
+      window.location.href = "student-login.html";
+    }
+  }
+
+  loadCurrentStudentProfile();
 
   // ---------------------------------------------------------
   // Burger sidebar (same behavior as the Student Dashboard)
@@ -175,7 +277,14 @@ document.addEventListener("DOMContentLoaded", () => {
     profilePhotoEdit.hidden = true;
     editProfileButton.textContent = "Edit Profile";
 
-    // Future: send the updated field values to the backend here
+    // Keep the in-page state aligned with edits. A later backend
+    // update endpoint can use this same object as its request body.
+    CURRENT_STUDENT.fullName = fullNameInput ? fullNameInput.value.trim() : CURRENT_STUDENT.fullName;
+    CURRENT_STUDENT.course = courseSelect ? courseSelect.value : CURRENT_STUDENT.course;
+    CURRENT_STUDENT.yearLevel = yearLevelSelect ? yearLevelSelect.value : CURRENT_STUDENT.yearLevel;
+    CURRENT_STUDENT.email = emailInput ? emailInput.value.trim() : CURRENT_STUDENT.email;
+    CURRENT_STUDENT.phone = phoneInput ? formatPhoneInput(phoneInput.value) : CURRENT_STUDENT.phone;
+    renderStudentProfile();
   }
 
   if (editProfileButton) {
@@ -193,18 +302,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // edit mode, since the edit badge is hidden otherwise
   // ---------------------------------------------------------
   const profilePhotoInput = document.getElementById("profilePhotoInput");
-  const profilePhoto = document.getElementById("profilePhoto");
 
   if (profilePhotoInput && profilePhoto) {
-    profilePhotoInput.addEventListener("change", () => {
+    profilePhotoInput.addEventListener("change", async () => {
       const file = profilePhotoInput.files && profilePhotoInput.files[0];
       if (!file) return;
 
       const previewUrl = URL.createObjectURL(file);
       profilePhoto.src = previewUrl;
 
-      // Future: upload `file` to the backend and use the
-      // returned URL instead of this local preview
+      try {
+        const savedPhoto = await uploadProfilePhoto(file);
+        CURRENT_STUDENT.profilePhoto = savedPhoto;
+        profilePhoto.src = `${savedPhoto}?v=${Date.now()}`;
+      } catch (error) {
+        alert(error.message);
+        renderStudentProfile();
+      } finally {
+        URL.revokeObjectURL(previewUrl);
+        profilePhotoInput.value = "";
+      }
     });
   }
 

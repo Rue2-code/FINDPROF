@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the faculty notifications page, including UI events and API calls.
 // =========================================================
 // FACULTY NOTIFICATIONS -- PAGE-SPECIFIC INTERACTIONS
 // Renders the notification list from a data array rather than

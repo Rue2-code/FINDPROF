@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Creates a student consultation request for the selected faculty member.
+
 require __DIR__ . '/bootstrap.php';
 requirePost();
 
@@ -8,6 +10,7 @@ $user = requireRole('student');
 $data = input();
 $facultyId = (int) ($data['faculty_id'] ?? 0);
 $purpose = clean((string) ($data['purpose'] ?? ''));
+$message = clean((string) ($data['message'] ?? ''));
 $date = clean((string) ($data['preferred_date'] ?? ''));
 $time = clean((string) ($data['preferred_time'] ?? ''));
 
@@ -17,6 +20,8 @@ if ($facultyId <= 0 || $purpose === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $
 
 try {
     $db = database();
+    ensureConsultationMessageColumn($db);
+
     $student = userProfile($db, $user['id'], 'student');
     if (!$student) {
         fail('Student profile was not found.', 404);
@@ -39,13 +44,14 @@ try {
 
     $statement = $db->prepare(
         'INSERT INTO consultation_requests
-            (Student_ID, Faculty_ID, Purpose, Request_Date, Preferred_Time, Status, Response)
-         VALUES (?, ?, ?, ?, ?, ?, ?)'
+            (Student_ID, Faculty_ID, Purpose, Additional_Message, Request_Date, Preferred_Time, Status, Response)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $statement->execute([
         (int) $student['profile_id'],
         $facultyId,
         $purpose,
+        $message !== '' ? $message : null,
         $date,
         preferredTimeStart($time),
         'pending',

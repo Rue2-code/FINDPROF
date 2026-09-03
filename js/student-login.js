@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the student login page, including UI events and API calls.
 // =========================================================
 // STUDENT LOGIN PAGE INTERACTIONS
 // - Back -> choose-account.html

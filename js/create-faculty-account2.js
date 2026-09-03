@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the create faculty account2 page, including UI events and API calls.
 // =========================================================
 // CREATE FACULTY ACCOUNT (PAGE 2) INTERACTIONS
 // - Back -> create-faculty-account.html

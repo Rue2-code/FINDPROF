@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Creates a reset code and emails it to the user.
+
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/mailer.php';
 requirePost();

@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the faculty availability page, including UI events and API calls.
 // =========================================================
 // FACULTY AVAILABILITY -- PAGE-SPECIFIC INTERACTIONS
 // - Current Status pill + Change Status dropdown, anchored
@@ -80,6 +81,96 @@ document.addEventListener("DOMContentLoaded", () => {
   // what makes a selection the new source of truth.
   let savedStatus = { status: "consultation", label: "Consultation" };
 
+  function statusForApi(status) {
+    const map = {
+      teaching: "in class",
+      onleave: "on leave",
+    };
+
+    return map[status] || status;
+  }
+
+  function statusForUi(status) {
+    const map = {
+      "in class": "teaching",
+      "on leave": "onleave",
+      unavailable: "offline",
+    };
+
+    return map[String(status || "").toLowerCase()] || String(status || "offline").toLowerCase();
+  }
+
+  function statusLabel(status) {
+    const labels = {
+      available: "Available",
+      teaching: "In Class",
+      meeting: "Meeting",
+      consultation: "Consultation",
+      onleave: "On Leave",
+      offline: "Offline",
+    };
+
+    return labels[status] || "Offline";
+  }
+
+  function currentTimeValue() {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  }
+
+  function currentDateValue() {
+    const now = new Date();
+    return [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("-");
+  }
+
+  function renderStatus(status, label) {
+    if (currentStatusDot) currentStatusDot.className = `status-dot status-${status}`;
+    if (currentStatusLabel) currentStatusLabel.textContent = label;
+  }
+
+  async function saveCurrentStatus(status) {
+    const response = await fetch("api/availability.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        status: statusForApi(status),
+        date: currentDateValue(),
+        time: currentTimeValue(),
+      }),
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.message || "Unable to save availability status.");
+    }
+  }
+
+  async function loadSavedStatus() {
+    try {
+      const response = await fetch("api/availability.php?role=faculty", {
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) return;
+
+      const latest = (result.availability || []).slice(-1)[0];
+      if (!latest) return;
+
+      const status = statusForUi(latest.Status);
+      savedStatus = { status, label: statusLabel(status) };
+      renderStatus(savedStatus.status, savedStatus.label);
+    } catch (error) {
+      // Keep the default display if availability cannot be loaded.
+    }
+  }
+
+  loadSavedStatus();
+
   function openStatusPanel() {
     statusPanel.hidden = false;
     requestAnimationFrame(() => statusPanel.classList.add("is-open"));
@@ -116,17 +207,24 @@ document.addEventListener("DOMContentLoaded", () => {
       // Update the main display immediately on selection.
       const status = option.dataset.status;
       const label = option.dataset.label;
-      if (currentStatusDot) currentStatusDot.className = `status-dot status-${status}`;
-      if (currentStatusLabel) currentStatusLabel.textContent = label;
+      renderStatus(status, label);
     });
   });
 
   if (saveStatusButton) {
-    saveStatusButton.addEventListener("click", (event) => {
+    saveStatusButton.addEventListener("click", async (event) => {
       event.stopPropagation();
       const selectedOption = statusOptions.find((opt) => opt.classList.contains("is-selected"));
       if (selectedOption) {
-        savedStatus = { status: selectedOption.dataset.status, label: selectedOption.dataset.label };
+        try {
+          await saveCurrentStatus(selectedOption.dataset.status);
+          savedStatus = { status: selectedOption.dataset.status, label: selectedOption.dataset.label };
+          renderStatus(savedStatus.status, savedStatus.label);
+        } catch (error) {
+          alert(error.message);
+          renderStatus(savedStatus.status, savedStatus.label);
+          return;
+        }
       }
       closeStatusPanel();
     });

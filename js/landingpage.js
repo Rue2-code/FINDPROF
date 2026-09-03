@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the landingpage page, including UI events and API calls.
 // =========================================================
 // LANDING PAGE INTERACTIONS
 // - Mobile nav toggle

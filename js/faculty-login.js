@@ -1,3 +1,4 @@
+// SYSTEM NOTE: Controls client-side behavior for the faculty login page, including UI events and API calls.
 // =========================================================
 // FACULTY LOGIN PAGE INTERACTIONS
 // - Back -> choose-account.html

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+// SYSTEM NOTE: Clears the current login session.
+
 require __DIR__ . '/bootstrap.php';
 requirePost();
 
